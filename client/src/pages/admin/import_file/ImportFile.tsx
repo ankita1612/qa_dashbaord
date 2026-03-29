@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import ValidationResult from "./ValidationResult";
 import { FiUpload } from "react-icons/fi";
+import { FaUpload, FaPlay } from "react-icons/fa";
+
 import ShowValidationRules from "./ShowValidationRules";
 
 import { useForm } from "react-hook-form";
@@ -221,36 +223,65 @@ const ImportFile: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                {/* Upload New File */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaders([]);
-                    setRulesData({});
-                    setFile(null);
-                    setFileName("");
-                    reset();
-                  }}
-                  className="bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300"
-                >
-                  Upload New File
-                </button>
+              <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white/80 backdrop-blur border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
+                {/* LEFT SIDE → File Info */}
+                <div className="flex items-center gap-4 min-w-0">
+                  {/* File Icon */}
+                  <div className="bg-blue-100 text-blue-600 p-3 rounded-xl">
+                    <FaUpload className="text-xl" />
+                  </div>
 
-                {/* Run Validation */}
-                <button
-                  onClick={handleRunValidation}
-                  type="button"
-                  disabled={!hasRules || validating}
-                  className={`py-3 px-6 rounded-xl font-semibold
-  ${
-    hasRules && !validating
-      ? "bg-blue-600 text-white hover:bg-blue-700"
-      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-  }`}
-                >
-                  {validating ? "Validating..." : "Run Validation"}
-                </button>
+                  {/* File Details */}
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-500">Uploaded File</p>
+
+                    <p className="text-gray-800 font-semibold truncate max-w-[220px] sm:max-w-sm">
+                      {fileName}
+                    </p>
+
+                    {/* Header Count Badge */}
+                    <div className="mt-1">
+                      <span className="inline-block bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+                        {headers.length} Headers Detected
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE → Buttons */}
+                <div className="flex flex-wrap gap-3 justify-end">
+                  {/* Upload New File */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaders([]);
+                      setRulesData({});
+                      setFile(null);
+                      setFileName("");
+                      reset();
+                    }}
+                    className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 py-2.5 px-5 rounded-xl font-medium hover:bg-gray-100 hover:shadow-sm transition-all duration-200"
+                  >
+                    <FaUpload className="text-sm" />
+                    Upload New
+                  </button>
+
+                  {/* Run Validation */}
+                  <button
+                    onClick={handleRunValidation}
+                    type="button"
+                    disabled={!hasRules || validating}
+                    className={`flex items-center gap-2 py-2.5 px-6 rounded-xl font-semibold shadow-sm transition-all duration-200
+        ${
+          hasRules && !validating
+            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 hover:scale-105"
+            : "bg-gray-200 text-gray-500 cursor-not-allowed"
+        }`}
+                  >
+                    <FaPlay className="text-sm" />
+                    {validating ? "Validating..." : "Run Validation"}
+                  </button>
+                </div>
               </div>
               <ShowValidationRules
                 headers={headers}

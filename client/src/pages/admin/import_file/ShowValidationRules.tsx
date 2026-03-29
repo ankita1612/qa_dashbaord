@@ -376,7 +376,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       });
     }
     setData(updated);
-    onRulesChange?.(generateJSON());
+    onRulesChange?.(generateJSON(currentHeader));
 
     setIsModalOpen(false);
     setTempRule({});
@@ -386,7 +386,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     toast.success(`${rule} rule applied`);
   };
 
-  const generateJSON = () => {
+  const generateJSON = (currentHeader) => {
+    console.log("========");
+    console.log(currentHeader);
+    console.log("========");
     const result: any = {};
 
     data.forEach((item) => {
@@ -428,11 +431,19 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         }
         if (rule.type === "dependency") {
           obj.dependency = {
-            mode: rule?.value?.mode,
-            main_value: rule?.value?.main_value,
+            [currentHeader.name]:
+              rule?.value?.mode === "required" ? true : rule?.value?.main_value,
             sub_dependencies: rule?.value?.sub_dependencies,
           };
         }
+        //         if (rule.type === "dependency") {
+        //           obj.dependency = {
+        //             obj[currentHeader.name] = rule?.value?.mode === "required"
+        //   ? true
+        //   : rule?.value?.main_value;
+        //             //     sub_dependencies: rule?.value?.sub_dependencies,
+        //           };
+        //         }
       });
 
       if (Object.keys(obj).length > 0) {
@@ -454,7 +465,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       setData(updated);
 
       // ✅ send updated JSON to parent
-      onRulesChange?.(generateJSON());
+      onRulesChange?.(generateJSON(currentHeader));
 
       // ✅ toast message
       const rule = getRuleName(deletedRule.type);
@@ -490,7 +501,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       {/* LEFT PANEL */}
       <div className="w-1/3 border-r bg-gray-50 flex flex-col">
         {/* HEADER */}
-        <div className="p-4 font-semibold text-gray-700 border-b">Headers</div>
+        <div className="p-4 font-semibold text-gray-700 border-b">
+          Headers({filteredData.length})
+        </div>
 
         {/* SEARCH INPUT */}
         <div className="p-3 border-b bg-white">
@@ -541,6 +554,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
           <h2 className="font-semibold text-gray-700">{current.name}</h2>
 
           <button
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 ease-in-out"
             onClick={() => {
               setEditingRule(false);
               setTempRule({});
@@ -612,7 +626,8 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                       <span>
                         Redundant:{" "}
                         <b>
-                          {rule.value.value} (Threshold: {rule.value.threshold})
+                          {rule.value.data_redundant_value} (Threshold:{" "}
+                          {rule.value.data_redundant_threshold})
                         </b>
                       </span>
                     )}

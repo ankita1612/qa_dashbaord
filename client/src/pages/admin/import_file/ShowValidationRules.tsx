@@ -2,6 +2,7 @@ import { FiTrash2, FiEdit } from "react-icons/fi";
 import React, { useState } from "react";
 import TagInputRule from "./TagInputRule";
 import toast from "react-hot-toast";
+import SubDependencySection from "./SubDependencySection";
 const date_format_options = [
   "YYYY-MM-DD",
   "DD-MM-YYYY",
@@ -53,6 +54,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
   const [tempRule, setTempRule] = useState<{
     type?:
       | "required"
@@ -64,7 +66,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       | "fixed_headers"
       | "not_match_found"
       | "cell_end_with"
-      | "cell_start_with";
+      | "cell_start_with"
+      | "dependency";
+
     required?: boolean;
     data_type?: string;
     length_mode?: "variable" | "fixed";
@@ -75,11 +79,34 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     data_redundant_value?: string;
     data_redundant_threshold?: string;
     cell_contains_value?: string;
+
     fixed_headers?: string[];
     not_match_found?: string[];
     cell_end_with?: string[];
     cell_start_with?: string[];
-  }>({});
+
+    // ✅ DEPENDENCY
+    dependency_mode?: "required" | "other";
+    other_value_main_dependency?: string;
+
+    // ✅ TEMP INPUT
+    sub_headers?: string[];
+    sub_mode?: "required" | "other";
+    sub_value?: string;
+
+    // ✅ FINAL LIST
+    sub_dependencies?: {
+      headers: string[];
+      mode: "required" | "other";
+      value?: string;
+    }[];
+  }>({
+    // ✅ VERY IMPORTANT DEFAULTS (fix uncontrolled warning)
+    dependency_mode: "required",
+    sub_headers: [],
+    sub_mode: "required",
+    sub_dependencies: [],
+  });
   const [data, setData] = useState<HeaderItem[]>(
     headers.map((h, i) => ({
       id: i, // ✅ ADD THIS
@@ -95,26 +122,6 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
 
   const current = data[selectedHeader];
 
-  const addRule = () => {
-    const updated = [...data];
-    updated[selectedHeader].rules.push({ type: "required" });
-    setData(updated);
-    onRulesChange?.(generateJSON());
-  };
-
-  const updateRule = (index: number, key: string, value: any) => {
-    const updated = [...data];
-    (updated[selectedHeader].rules[index] as any)[key] = value;
-    setData(updated);
-    onRulesChange?.(generateJSON());
-  };
-
-  const removeRule = (index: number) => {
-    const updated = [...data];
-    updated[selectedHeader].rules.splice(index, 1);
-    setData(updated);
-    onRulesChange?.(generateJSON());
-  };
   const applyRule = () => {
     // ✅ 1. Rule must be selected
     if (!tempRule.type) {
@@ -201,6 +208,23 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     if (tempRule.type === "not_match_found") {
       if (!tempRule.not_match_found || tempRule.not_match_found.length === 0) {
         toast.error("Please add at least one not_match_found");
+        return;
+      }
+    }
+    if (tempRule.type === "dependency") {
+      if (
+        tempRule.dependency_mode === "other" &&
+        !tempRule.other_value_main_dependency
+      ) {
+        toast.error("Enter main dependency value");
+        return;
+      }
+
+      if (
+        !tempRule.sub_dependencies ||
+        tempRule.sub_dependencies.length === 0
+      ) {
+        toast.error("Add at least one sub dependency");
         return;
       }
     }
@@ -337,6 +361,20 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         value: tempRule.not_match_found,
       });
     }
+    alert(tempRule.type);
+    if (tempRule.type === "dependency") {
+      currentHeader.rules.push({
+        type: "dependency",
+        value: {
+          mode: tempRule.dependency_mode,
+          main_value:
+            tempRule.dependency_mode === "other"
+              ? tempRule.other_value_main_dependency
+              : null,
+          sub_dependencies: tempRule.sub_dependencies,
+        },
+      });
+    }
     setData(updated);
     onRulesChange?.(generateJSON());
 
@@ -388,6 +426,13 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         if (rule.type === "not_match_found") {
           obj.not_match_found = rule.value;
         }
+        if (rule.type === "dependency") {
+          obj.dependency = {
+            mode: rule?.value?.mode,
+            main_value: rule?.value?.main_value,
+            sub_dependencies: rule?.value?.sub_dependencies,
+          };
+        }
       });
 
       if (Object.keys(obj).length > 0) {
@@ -428,6 +473,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     if (ruleType === "cell_start_with") return "Cell start with";
     if (ruleType === "cell_end_with") return "Cell end with";
     if (ruleType === "not_match_found") return "Blocked value";
+    if (ruleType === "dependency") return "Dependacy";
 
     alert(ruleType);
   };
@@ -601,6 +647,26 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         <b>{(rule.value as string[]).join(", ")}</b>
                       </span>
                     )}
+                    {rule.type === "dependency" && (
+                      <div>
+                        Dependency:
+                        <b>
+                          {rule.value.mode === "required"
+                            ? " Required"
+                            : ` ${rule.value.main_value}`}
+                        </b>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {rule.value.sub_dependencies.map(
+                            (s: any, i: number) => (
+                              <div key={i}>
+                                {s.headers.join(", ")} → {s.mode}
+                                {s.value && ` (${s.value})`}
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -685,6 +751,25 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                             not_match_found: rule.value as string[],
                           });
                         }
+                        if (rule.type === "dependency") {
+                          const val = rule.value as any;
+
+                          setTempRule({
+                            type: "dependency", // ✅ VERY IMPORTANT (fix dropdown issue)
+
+                            // MAIN
+                            dependency_mode: val.mode || "required",
+                            other_value_main_dependency: val.main_value || "",
+
+                            // SUB DEPENDENCIES (existing list)
+                            sub_dependencies: val.sub_dependencies || [],
+
+                            // RESET INPUT STATE
+                            sub_headers: [],
+                            sub_mode: "required",
+                            sub_value: "",
+                          });
+                        }
                         setIsModalOpen(true);
                       }}
                       className="text-blue-600 text-sm"
@@ -730,6 +815,12 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     }),
                     ...(type === "date_format" && {
                       date_format: "YYYY-MM-DD",
+                    }),
+                    ...(type === "dependency" && {
+                      dependency_mode: "required",
+                      sub_headers: [],
+                      sub_mode: "required",
+                      sub_dependencies: [],
                     }),
                   });
                 }}
@@ -801,6 +892,12 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   disabled={appliedRuleTypes.includes("not_match_found")}
                 >
                   Blocked Value
+                </option>
+                <option
+                  value="dependency"
+                  disabled={appliedRuleTypes.includes("dependency")}
+                >
+                  Dependency
                 </option>
               </select>
             </div>
@@ -1076,6 +1173,78 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                 }
               />
             )}
+
+            {tempRule.type === "dependency" && (
+              <div className="space-y-5">
+                {/* MAIN */}
+                <div>
+                  <label className="text-sm font-medium text-gray-600">
+                    Main Dependency
+                  </label>
+
+                  <div className="flex gap-6 mt-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="dependency_mode"
+                        checked={
+                          (tempRule.dependency_mode ?? "required") ===
+                          "required"
+                        }
+                        onChange={() =>
+                          setTempRule({
+                            ...tempRule,
+                            dependency_mode: "required",
+                          })
+                        }
+                      />
+                      Required
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="dependency_mode"
+                        checked={
+                          (tempRule.dependency_mode ?? "required") === "other"
+                        }
+                        onChange={() =>
+                          setTempRule({
+                            ...tempRule,
+                            dependency_mode: "other",
+                          })
+                        }
+                      />
+                      Other Value
+                    </label>
+                  </div>
+
+                  {(tempRule.dependency_mode ?? "required") === "other" && (
+                    <input
+                      type="text"
+                      placeholder="Enter value"
+                      value={tempRule.other_value_main_dependency ?? ""}
+                      onChange={(e) =>
+                        setTempRule({
+                          ...tempRule,
+                          other_value_main_dependency: e.target.value,
+                        })
+                      }
+                      className="w-full mt-2 border rounded-lg px-3 py-2 text-sm"
+                    />
+                  )}
+                </div>
+
+                {/* SUB DEPENDENCY COMPONENT */}
+                <SubDependencySection
+                  tempRule={tempRule}
+                  setTempRule={setTempRule}
+                  headers={data.map((h) => h.name)}
+                  currentHeader={current.name}
+                />
+              </div>
+            )}
+
             {/* ACTIONS */}
             <div className="flex justify-end gap-2 mt-6">
               <button

@@ -1,5 +1,6 @@
 import { FiTrash2, FiEdit } from "react-icons/fi";
 import React, { useState } from "react";
+import TagInputRule from "./TagInputRule";
 import toast from "react-hot-toast";
 const date_format_options = [
   "YYYY-MM-DD",
@@ -31,10 +32,6 @@ const date_format_options = [
   "MM_DD_YYYY HH:mm:ss",
   "YYYY_MM_DD HH:mm:ss",
 ];
-type RuleConfig = {
-  required?: boolean; // has_empty
-  data_type?: string;
-};
 
 type Rule = {
   type: string;
@@ -53,15 +50,12 @@ type Props = {
 };
 
 const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
+  const [headerInput, setHeaderInput] = useState("");
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(false);
-  type TempRuleType =
-    | "required"
-    | "data_type"
-    | "data_length"
-    | "date_format"
-    | "data_redundant"
-    | "regex";
+
   const [tempRule, setTempRule] = useState<{
     type?:
       | "required"
@@ -69,7 +63,11 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       | "data_length"
       | "date_format"
       | "data_redundant"
-      | "regex";
+      | "regex"
+      | "fixed_headers"
+      | "not_match_found"
+      | "cell_end_with"
+      | "cell_start_with";
     required?: boolean;
     data_type?: string;
     length_mode?: "variable" | "fixed";
@@ -80,6 +78,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     data_redundant_value?: string;
     data_redundant_threshold?: string;
     cell_contains_value?: string;
+    fixed_headers?: string[];
+    not_match_found?: string[];
+    cell_end_with?: string[];
+    cell_start_with?: string[];
   }>({});
   const [data, setData] = useState<HeaderItem[]>(
     headers.map((h, i) => ({
@@ -180,6 +182,31 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         return;
       }
     }
+
+    if (tempRule.type === "fixed_headers") {
+      if (!tempRule.fixed_headers || tempRule.fixed_headers.length === 0) {
+        toast.error("Please add at least one fixed header");
+        return;
+      }
+    }
+    if (tempRule.type === "cell_end_with") {
+      if (!tempRule.cell_end_with || tempRule.cell_end_with.length === 0) {
+        toast.error("Please add at least one cell_end_with");
+        return;
+      }
+    }
+    if (tempRule.type === "cell_start_with") {
+      if (!tempRule.cell_start_with || tempRule.cell_start_with.length === 0) {
+        toast.error("Please add at least one cell_start_with");
+        return;
+      }
+    }
+    if (tempRule.type === "not_match_found") {
+      if (!tempRule.not_match_found || tempRule.not_match_found.length === 0) {
+        toast.error("Please add at least one not_match_found");
+        return;
+      }
+    }
     const updated = [...data];
     const currentHeader = updated[selectedHeader];
 
@@ -264,6 +291,50 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         value: tempRule.cell_contains_value,
       });
     }
+
+    if (tempRule.type === "fixed_headers") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "fixed_headers",
+      );
+
+      currentHeader.rules.push({
+        type: "fixed_headers",
+        value: tempRule.fixed_headers,
+      });
+    }
+
+    if (tempRule.type === "cell_start_with") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "cell_start_with",
+      );
+
+      currentHeader.rules.push({
+        type: "cell_start_with",
+        value: tempRule.cell_start_with,
+      });
+    }
+
+    if (tempRule.type === "cell_end_with") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "cell_end_with",
+      );
+
+      currentHeader.rules.push({
+        type: "cell_end_with",
+        value: tempRule.cell_end_with,
+      });
+    }
+
+    if (tempRule.type === "not_match_found") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "not_match_found",
+      );
+
+      currentHeader.rules.push({
+        type: "not_match_found",
+        value: tempRule.not_match_found,
+      });
+    }
     setData(updated);
     onRulesChange?.(generateJSON());
 
@@ -302,6 +373,18 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         if (rule.type === "regex") {
           obj.cell_contains_value = rule.value;
         }
+        if (rule.type === "fixed_headers") {
+          obj.fixed_headers = rule.value;
+        }
+        if (rule.type === "cell_start_with") {
+          obj.cell_start_with = rule.value;
+        }
+        if (rule.type === "cell_end_with") {
+          obj.cell_end_with = rule.value;
+        }
+        if (rule.type === "not_match_found") {
+          obj.not_match_found = rule.value;
+        }
       });
 
       if (Object.keys(obj).length > 0) {
@@ -338,6 +421,11 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     if (ruleType === "regex") return "Regex";
     if (ruleType === "data_redundant") return "Data redundant and threshold";
     if (ruleType === "date_format") return "Date format";
+    if (ruleType === "fixed_headers") return "Fixed Header";
+    if (ruleType === "cell_start_with") return "Cell start with";
+    if (ruleType === "cell_end_with") return "Cell end with";
+    if (ruleType === "not_match_found") return "Blocked value";
+
     alert(ruleType);
   };
   const appliedRuleTypes = current.rules.map((r) => r.type);
@@ -485,6 +573,31 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         Regex: <b>{rule.value}</b>
                       </span>
                     )}
+
+                    {rule.type === "fixed_headers" && (
+                      <span>
+                        Fixed Headers:{" "}
+                        <b>{(rule.value as string[]).join(", ")}</b>
+                      </span>
+                    )}
+                    {rule.type === "cell_start_with" && (
+                      <span>
+                        Cell Start With:{" "}
+                        <b>{(rule.value as string[]).join(", ")}</b>
+                      </span>
+                    )}
+                    {rule.type === "cell_end_with" && (
+                      <span>
+                        Cell End With:{" "}
+                        <b>{(rule.value as string[]).join(", ")}</b>
+                      </span>
+                    )}
+                    {rule.type === "not_match_found" && (
+                      <span>
+                        Blocked value:{" "}
+                        <b>{(rule.value as string[]).join(", ")}</b>
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -542,6 +655,31 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           setTempRule({
                             type: "regex",
                             cell_contains_value: rule.value as string,
+                          });
+                        }
+
+                        if (rule.type === "fixed_headers") {
+                          setTempRule({
+                            type: "fixed_headers",
+                            fixed_headers: rule.value as string[],
+                          });
+                        }
+                        if (rule.type === "cell_start_with") {
+                          setTempRule({
+                            type: "cell_start_with",
+                            cell_start_with: rule.value as string[],
+                          });
+                        }
+                        if (rule.type === "cell_end_with") {
+                          setTempRule({
+                            type: "cell_end_with",
+                            cell_end_with: rule.value as string[],
+                          });
+                        }
+                        if (rule.type === "not_match_found") {
+                          setTempRule({
+                            type: "not_match_found",
+                            not_match_found: rule.value as string[],
                           });
                         }
                         setIsModalOpen(true);
@@ -636,6 +774,30 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   value="regex"
                 >
                   Regex
+                </option>
+                <option
+                  value="fixed_headers"
+                  disabled={appliedRuleTypes.includes("fixed_headers")}
+                >
+                  Fixed Headers
+                </option>
+                <option
+                  value="cell_start_with"
+                  disabled={appliedRuleTypes.includes("cell_start_with")}
+                >
+                  Cell Start With
+                </option>
+                <option
+                  value="cell_end_with"
+                  disabled={appliedRuleTypes.includes("cell_end_with")}
+                >
+                  Cell End With
+                </option>
+                <option
+                  value="not_match_found"
+                  disabled={appliedRuleTypes.includes("not_match_found")}
+                >
+                  Blocked Value
                 </option>
               </select>
             </div>
@@ -873,6 +1035,43 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            )}
+
+            {tempRule.type === "fixed_headers" && (
+              <TagInputRule
+                label="Header"
+                values={tempRule.fixed_headers || []}
+                onChange={(val) =>
+                  setTempRule({ ...tempRule, fixed_headers: val })
+                }
+              />
+            )}
+            {tempRule.type === "cell_start_with" && (
+              <TagInputRule
+                label="Start Value"
+                values={tempRule.cell_start_with || []}
+                onChange={(val) =>
+                  setTempRule({ ...tempRule, cell_start_with: val })
+                }
+              />
+            )}
+            {tempRule.type === "cell_end_with" && (
+              <TagInputRule
+                label="End Value"
+                values={tempRule.cell_end_with || []}
+                onChange={(val) =>
+                  setTempRule({ ...tempRule, cell_end_with: val })
+                }
+              />
+            )}
+            {tempRule.type === "not_match_found" && (
+              <TagInputRule
+                label="Blocked Value"
+                values={tempRule.not_match_found || []}
+                onChange={(val) =>
+                  setTempRule({ ...tempRule, not_match_found: val })
+                }
+              />
             )}
             {/* ACTIONS */}
             <div className="flex justify-end gap-2 mt-6">

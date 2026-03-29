@@ -50,12 +50,9 @@ type Props = {
 };
 
 const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
-  const [headerInput, setHeaderInput] = useState("");
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(false);
-
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [tempRule, setTempRule] = useState<{
     type?:
       | "required"
@@ -210,13 +207,18 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     const updated = [...data];
     const currentHeader = updated[selectedHeader];
 
+    // ✅ If editing → remove OLD rule (regardless of type)
+    if (editingIndex !== null) {
+      currentHeader.rules.splice(editingIndex, 1);
+    }
+
     // ======================
     // REQUIRED
     // ======================
     if (tempRule.type === "required") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "required",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "required",
+      //   );
 
       currentHeader.rules.push({
         type: "required",
@@ -228,9 +230,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     // DATA TYPE
     // ======================
     if (tempRule.type === "data_type") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "data_type",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "data_type",
+      //   );
 
       currentHeader.rules.push({
         type: "data_type",
@@ -238,9 +240,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       });
     }
     if (tempRule.type === "data_length") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "data_length",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "data_length",
+      //   );
 
       currentHeader.rules.push({
         type: "data_length",
@@ -254,9 +256,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
 
     if (tempRule.type === "date_format") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "date_format",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "date_format",
+      //   );
 
       currentHeader.rules.push({
         type: "date_format",
@@ -265,9 +267,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
 
     if (tempRule.type === "data_redundant") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "data_redundant",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "data_redundant",
+      //   );
 
       currentHeader.rules.push({
         type: "data_redundant",
@@ -282,9 +284,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     // REGEX
     // ======================
     if (tempRule.type === "regex") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "regex",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "regex",
+      //   );
 
       currentHeader.rules.push({
         type: "regex",
@@ -293,9 +295,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
 
     if (tempRule.type === "fixed_headers") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "fixed_headers",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "fixed_headers",
+      //   );
 
       currentHeader.rules.push({
         type: "fixed_headers",
@@ -304,9 +306,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
 
     if (tempRule.type === "cell_start_with") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "cell_start_with",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "cell_start_with",
+      //   );
 
       currentHeader.rules.push({
         type: "cell_start_with",
@@ -315,9 +317,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
 
     if (tempRule.type === "cell_end_with") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "cell_end_with",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "cell_end_with",
+      //   );
 
       currentHeader.rules.push({
         type: "cell_end_with",
@@ -326,9 +328,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
 
     if (tempRule.type === "not_match_found") {
-      currentHeader.rules = currentHeader.rules.filter(
-        (r) => r.type !== "not_match_found",
-      );
+      //   currentHeader.rules = currentHeader.rules.filter(
+      //     (r) => r.type !== "not_match_found",
+      //   );
 
       currentHeader.rules.push({
         type: "not_match_found",
@@ -340,7 +342,8 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
 
     setIsModalOpen(false);
     setTempRule({});
-
+    setEditingIndex(null);
+    setEditingRule(false);
     const rule = getRuleName(tempRule.type);
     toast.success(`${rule} rule applied`);
   };
@@ -604,7 +607,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     <button
                       onClick={() => {
                         setEditingRule(true);
-
+                        setEditingIndex(idx);
                         if (rule.type === "required") {
                           setTempRule({
                             type: "required",

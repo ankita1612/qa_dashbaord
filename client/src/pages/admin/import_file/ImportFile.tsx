@@ -136,14 +136,17 @@ const ImportFile: React.FC = () => {
       // attach rules JSON
       formData.append("rules", JSON.stringify(rulesData));
 
-      const response = await apiClient.post(`admin/api/qa_file`, formData, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      console.log("+++++++++++++++");
+      console.log(JSON.stringify(rulesData));
+      console.log("+++++++++++++++");
+      // const response = await apiClient.post(`admin/api/qa_file`, formData, {
+      //   withCredentials: true,
+      //   headers: {
+      //     "Content-Type": "multipart/form-data",
+      //   },
+      // });
 
-      console.log("Validation Response:", response.data);
+      // console.log("Validation Response:", response.data);
     } catch (error) {
       console.error("Validation Error:", error);
     } finally {

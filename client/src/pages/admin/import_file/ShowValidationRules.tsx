@@ -1,6 +1,36 @@
 import { FiTrash2, FiEdit } from "react-icons/fi";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+const date_format_options = [
+  "YYYY-MM-DD",
+  "DD-MM-YYYY",
+  "MM-DD-YYYY",
+  "YYYY/MM/DD",
+  "DD/MM/YYYY",
+  "MM/DD/YYYY",
+  "YYYY-MM-DD HH:mm:ss",
+  "DD-MM-YYYY HH:mm:ss",
+  "MM/DD/YYYY HH:mm:ss",
+  "YYYY-MM-DDTHH:mm:ss",
+  "DD-MM-YYYY h:i:s a",
+  "MM/DD/YYYY h:i a",
+  "YYYY-MM-DD h:i:s A",
+  "DD MMM YYYY",
+  "MMM DD, YYYY",
+  "MMMM DD, YYYY",
+  "DD Month YYYY",
+  "DD-MM-YY",
+  "MM/DD/YY",
+  "DD_MM_YYYY",
+  "MM_DD_YYYY",
+  "YYYY_MM_DD",
+  "DD_MM_YYYY h:i:s a",
+  "MM_DD_YYYY h:i:s a",
+  "YYYY_MM_DD h:i:s a",
+  "DD_MM_YYYY HH:mm:ss",
+  "MM_DD_YYYY HH:mm:ss",
+  "YYYY_MM_DD HH:mm:ss",
+];
 type RuleConfig = {
   required?: boolean; // has_empty
   data_type?: string;
@@ -25,15 +55,31 @@ type Props = {
 const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(false);
-
+  type TempRuleType =
+    | "required"
+    | "data_type"
+    | "data_length"
+    | "date_format"
+    | "data_redundant"
+    | "regex";
   const [tempRule, setTempRule] = useState<{
-    type?: "required" | "data_type" | "data_length";
+    type?:
+      | "required"
+      | "data_type"
+      | "data_length"
+      | "date_format"
+      | "data_redundant"
+      | "regex";
     required?: boolean;
     data_type?: string;
     length_mode?: "variable" | "fixed";
     min?: any;
     max?: any;
     fixed?: any;
+    date_format?: string;
+    data_redundant_value?: string;
+    data_redundant_threshold?: string;
+    cell_contains_value?: string;
   }>({});
   const [data, setData] = useState<HeaderItem[]>(
     headers.map((h, i) => ({
@@ -82,7 +128,58 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       toast.error("Please select data type");
       return;
     }
+    if (tempRule.type === "data_length") {
+      if (tempRule.length_mode === "fixed" && !tempRule.fixed) {
+        toast.error("Please enter fixed length");
+        return;
+      }
 
+      if (
+        tempRule.length_mode !== "fixed" &&
+        (!tempRule.min || !tempRule.max)
+      ) {
+        toast.error("Please enter min and max values");
+        return;
+      }
+    }
+
+    // DATE FORMAT VALIDATION
+    if (tempRule.type === "date_format" && !tempRule.date_format) {
+      toast.error("Please select date format");
+      return;
+    }
+
+    if (tempRule.type === "data_redundant") {
+      if (!tempRule.data_redundant_value) {
+        toast.error("Please enter redundant value");
+        return;
+      }
+
+      if (!tempRule.data_redundant_threshold) {
+        toast.error("Please enter threshold");
+        return;
+      }
+    }
+
+    if (tempRule.type === "data_redundant") {
+      if (!tempRule.data_redundant_value) {
+        toast.error("Please enter redundant value");
+        return;
+      }
+
+      if (!tempRule.data_redundant_threshold) {
+        toast.error("Please enter threshold");
+        return;
+      }
+    }
+
+    // ✅ Regex Validation
+    if (tempRule.type === "regex") {
+      if (!tempRule.cell_contains_value) {
+        toast.error("Please enter regex value");
+        return;
+      }
+    }
     const updated = [...data];
     const currentHeader = updated[selectedHeader];
 
@@ -113,10 +210,6 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         value: tempRule.data_type || "string", // ✅ fallback
       });
     }
-
-    // ======================
-    // DATA LENGTH
-    // ======================
     if (tempRule.type === "data_length") {
       currentHeader.rules = currentHeader.rules.filter(
         (r) => r.type !== "data_length",
@@ -126,13 +219,51 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         type: "data_length",
         value: {
           mode: tempRule.length_mode || "variable",
-          min: tempRule.min || null,
-          max: tempRule.max || null,
-          fixed: tempRule.fixed || null,
+          min: tempRule.min,
+          max: tempRule.max,
+          fixed: tempRule.fixed,
         },
       });
     }
 
+    if (tempRule.type === "date_format") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "date_format",
+      );
+
+      currentHeader.rules.push({
+        type: "date_format",
+        value: tempRule.date_format || "YYYY-MM-DD", // ✅ safety fallback
+      });
+    }
+
+    if (tempRule.type === "data_redundant") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "data_redundant",
+      );
+
+      currentHeader.rules.push({
+        type: "data_redundant",
+        value: {
+          data_redundant_value: tempRule.data_redundant_value,
+          data_redundant_threshold: tempRule.data_redundant_threshold,
+        },
+      });
+    }
+
+    // ======================
+    // REGEX
+    // ======================
+    if (tempRule.type === "regex") {
+      currentHeader.rules = currentHeader.rules.filter(
+        (r) => r.type !== "regex",
+      );
+
+      currentHeader.rules.push({
+        type: "regex",
+        value: tempRule.cell_contains_value,
+      });
+    }
     setData(updated);
     onRulesChange?.(generateJSON());
 
@@ -142,62 +273,6 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     const rule = getRuleName(tempRule.type);
     toast.success(`${rule} rule applied`);
   };
-  //   const applyRule = () => {
-  //     if (!tempRule.type) {
-  //       toast.error("Please select a rule first");
-  //       return;
-  //     }
-
-  //     if (tempRule.type === "data_type" && !tempRule.data_type) {
-  //       toast.error("Please select data type");
-  //       return;
-  //     }
-  //     const updated = [...data];
-  //     const currentHeader = updated[selectedHeader];
-
-  //     if (tempRule.type === "required") {
-  //       currentHeader.rules = currentHeader.rules.filter(
-  //         (r) => r.type !== "required",
-  //       );
-
-  //       currentHeader.rules.push({
-  //         type: "required",
-  //         value: tempRule.required,
-  //       });
-  //     }
-
-  //     if (tempRule.type === "data_type") {
-  //       currentHeader.rules = currentHeader.rules.filter(
-  //         (r) => r.type !== "data_type",
-  //       );
-
-  //       currentHeader.rules.push({
-  //         type: "data_type",
-  //         value: tempRule.data_type,
-  //       });
-  //     }
-  //     if (tempRule.type === "data_length") {
-  //       currentHeader.rules = currentHeader.rules.filter(
-  //         (r) => r.type !== "data_length",
-  //       );
-
-  //       currentHeader.rules.push({
-  //         type: "data_length",
-  //         value: {
-  //           mode: tempRule.length_mode || "variable",
-  //           min: tempRule.min,
-  //           max: tempRule.max,
-  //           fixed: tempRule.fixed,
-  //         },
-  //       });
-  //     }
-  //     setData(updated);
-  //     onRulesChange?.(generateJSON());
-  //     setIsModalOpen(false);
-  //     const rule = getRuleName(tempRule.type);
-  //     setTempRule({});
-  //     toast.success(`${rule} rule applied`);
-  //   };
 
   const generateJSON = () => {
     const result: any = {};
@@ -216,13 +291,24 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         if (rule.type === "data_length") {
           obj.data_length = rule.value;
         }
+
+        if (rule.type === "date_format") {
+          obj.date_format = rule.value;
+        }
+        if (rule.type === "data_redundant") {
+          obj.data_redundant_value = rule.value.data_redundant_value;
+          obj.data_redundant_threshold = rule.value.data_redundant_threshold;
+        }
+        if (rule.type === "regex") {
+          obj.cell_contains_value = rule.value;
+        }
       });
 
       if (Object.keys(obj).length > 0) {
         result[item.name] = obj;
       }
     });
-
+    console.log(result);
     return result;
   };
   const handleDeleteRule = (index: number) => {
@@ -248,9 +334,19 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
   const getRuleName = (ruleType: string) => {
     if (ruleType === "required") return "Required";
     if (ruleType === "data_type") return "Data Type";
-    if (ruleType === "data_length") return "Data Length";
-    return "Rule";
+    if (ruleType === "data_length") return "Length type";
+    if (ruleType === "regex") return "Regex";
+    if (ruleType === "data_redundant") return "Data redundant and threshold";
+    if (ruleType === "date_format") return "Date format";
+    alert(ruleType);
   };
+  const appliedRuleTypes = current.rules.map((r) => r.type);
+  const appliedRuleDataType = current.rules.filter(
+    (r) => r.type == "data_type",
+  );
+
+  const currentDataType =
+    (appliedRuleDataType?.[0]?.value as string) || "string";
 
   return (
     <div className="flex h-[600px] border rounded-2xl overflow-hidden bg-white shadow">
@@ -321,7 +417,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-6">
           {/* EMPTY STATE */}
-          {JSON.stringify(current.rules)}
+          [[[{JSON.stringify(current.rules)}]]]
           {current.rules.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-500">
               <p className="mb-4">No rules applied</p>
@@ -357,17 +453,40 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         Data Type: <b>{rule.value}</b>
                       </span>
                     )}
+                    {rule.type === "data_length" && (
+                      <span>
+                        Length:{" "}
+                        <b>
+                          {(rule.value as any).mode === "fixed"
+                            ? `Fixed (${(rule.value as any).fixed})`
+                            : `Min ${(rule.value as any).min} - Max ${(rule.value as any).max}`}
+                        </b>
+                      </span>
+                    )}
+
+                    {/* ✅ DATE FORMAT */}
+                    {rule.type === "date_format" && (
+                      <span>
+                        Date Format: <b>{rule.value as string}</b>
+                      </span>
+                    )}
+
+                    {rule.type === "data_redundant" && (
+                      <span>
+                        Redundant:{" "}
+                        <b>
+                          {rule.value.value} (Threshold: {rule.value.threshold})
+                        </b>
+                      </span>
+                    )}
+
+                    {rule.type === "regex" && (
+                      <span>
+                        Regex: <b>{rule.value}</b>
+                      </span>
+                    )}
                   </div>
-                  {rule.type === "data_length" && (
-                    <span>
-                      Length:{" "}
-                      <b>
-                        {rule.value.mode === "fixed"
-                          ? `Fixed (${rule.value.fixed})`
-                          : `Min ${rule.value.min} - Max ${rule.value.max}`}
-                      </b>
-                    </span>
-                  )}
+
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => {
@@ -386,7 +505,45 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                             data_type: rule.value as string,
                           });
                         }
+                        // ✅ DATA LENGTH
+                        if (rule.type === "data_length") {
+                          const val = rule.value as any;
 
+                          setTempRule({
+                            type: "data_length",
+                            length_mode: val.mode || "variable",
+                            min: val.min ?? "",
+                            max: val.max ?? "",
+                            fixed: val.fixed ?? "",
+                          });
+                        }
+
+                        // ✅ DATE FORMAT
+                        if (rule.type === "date_format") {
+                          setTempRule({
+                            type: "date_format",
+                            date_format: rule.value as string,
+                          });
+                        }
+
+                        // ✅ DATA REDUNDANT
+                        if (rule.type === "data_redundant") {
+                          const val = rule.value as any;
+
+                          setTempRule({
+                            type: "data_redundant",
+                            data_redundant_value: val.value,
+                            data_redundant_threshold: val.threshold,
+                          });
+                        }
+
+                        // ✅ REGEX
+                        if (rule.type === "regex") {
+                          setTempRule({
+                            type: "regex",
+                            cell_contains_value: rule.value as string,
+                          });
+                        }
                         setIsModalOpen(true);
                       }}
                       className="text-blue-600 text-sm"
@@ -413,7 +570,6 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             <h2 className="text-lg font-semibold mb-4">
               {editingRule ? "Edit Rule" : "Add Rule"}
             </h2>
-
             {/* RULE TYPE */}
             <div className="mb-4">
               <label className="text-sm font-medium text-gray-600">
@@ -421,16 +577,68 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
               </label>
               <select
                 value={tempRule.type || ""}
-                onChange={(e) => setTempRule({ type: e.target.value as any })}
+                onChange={(e) => {
+                  const type = e.target.value as any;
+
+                  setTempRule({
+                    type,
+                    ...(type === "data_type" && { data_type: "string" }),
+                    ...(type === "data_length" && {
+                      data_type: "string",
+                      length_mode: "variable",
+                    }),
+                    ...(type === "date_format" && {
+                      date_format: "YYYY-MM-DD",
+                    }),
+                  });
+                }}
                 className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Select</option>
-                <option value="required">Required</option>
-                <option value="data_type">Data Type</option>
-                <option value="data_length">Data Length</option>
+
+                <option
+                  value="required"
+                  disabled={appliedRuleTypes.includes("required")}
+                >
+                  Required
+                </option>
+
+                <option
+                  value="data_type"
+                  disabled={appliedRuleTypes.includes("data_type")}
+                >
+                  Data Type
+                </option>
+
+                <option
+                  value="data_length"
+                  disabled={appliedRuleTypes.includes("data_length")}
+                >
+                  Data Length
+                </option>
+
+                {currentDataType === "date" && (
+                  <option
+                    value="date_format"
+                    disabled={appliedRuleTypes.includes("date_format")}
+                  >
+                    Date Format
+                  </option>
+                )}
+                <option
+                  value="data_redundant"
+                  disabled={appliedRuleTypes.includes("data_redundant")}
+                >
+                  Data Redundant & Threshold
+                </option>
+                <option
+                  disabled={appliedRuleTypes.includes("regex")}
+                  value="regex"
+                >
+                  Regex
+                </option>
               </select>
             </div>
-
             {/* REQUIRED RULE */}
             {tempRule.type === "required" && (
               <div className="mb-4 flex items-center justify-between">
@@ -449,7 +657,6 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                 />
               </div>
             )}
-
             {/* DATA TYPE RULE */}
             {tempRule.type === "data_type" && (
               <div className="mb-4">
@@ -457,7 +664,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   Select Data Type
                 </label>
                 <select
-                  value={tempRule.data_type || ""}
+                  value={tempRule.data_type || "string"}
                   onChange={(e) =>
                     setTempRule({
                       ...tempRule,
@@ -466,7 +673,6 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   }
                   className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="">Select Datatype</option>
                   <option value="string">String</option>
                   <option value="alphabetic">Alphabetic</option>
                   <option value="integer">Integer</option>
@@ -477,9 +683,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                 </select>
               </div>
             )}
+
             {tempRule.type === "data_length" && (
               <div className="space-y-4">
-                {/* MODE SELECT */}
+                {/* MODE */}
                 <div>
                   <label className="text-sm text-gray-600">Length Type</label>
                   <select
@@ -496,13 +703,13 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     <option value="fixed">Fixed</option>
                   </select>
                 </div>
-                {/* VARIABLE MODE */}[{tempRule.data_type}]
-                {(!tempRule.length_mode ||
-                  tempRule.length_mode === "variable") && (
+
+                {/* VARIABLE */}
+                {tempRule.length_mode !== "fixed" && (
                   <div className="grid grid-cols-2 gap-3">
-                    {/* STRING / EMAIL / BOOLEAN */}
+                    {/* STRING TYPES */}
                     {["string", "alphabetic", "email", "boolean"].includes(
-                      tempRule.data_type || "",
+                      currentDataType,
                     ) && (
                       <>
                         <input
@@ -527,9 +734,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     )}
 
                     {/* NUMBER */}
-                    {["integer", "float"].includes(
-                      tempRule.data_type || "",
-                    ) && (
+                    {["integer", "float"].includes(currentDataType) && (
                       <>
                         <input
                           type="number"
@@ -553,7 +758,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     )}
 
                     {/* DATE */}
-                    {tempRule.data_type === "date" && (
+                    {currentDataType === "date" && (
                       <>
                         <input
                           type="date"
@@ -575,7 +780,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     )}
                   </div>
                 )}
-                {/* FIXED MODE */}
+                {/* FIXED */}
                 {tempRule.length_mode === "fixed" && (
                   <input
                     type="number"
@@ -587,6 +792,86 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     className="w-full border rounded-lg px-3 py-2 text-sm"
                   />
                 )}
+              </div>
+            )}
+            {tempRule.type === "date_format" && (
+              <div className="mb-4">
+                <label className="text-sm text-gray-600">
+                  Select Date Format
+                </label>
+
+                <select
+                  value={tempRule.date_format || "YYYY-MM-DD"}
+                  onChange={(e) =>
+                    setTempRule({
+                      ...tempRule,
+                      date_format: e.target.value,
+                    })
+                  }
+                  className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
+                >
+                  {date_format_options.map((format) => (
+                    <option key={format} value={format}>
+                      {format}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {tempRule.type === "data_redundant" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-gray-600">
+                    Redundant Value
+                  </label>
+                  <input
+                    type="text"
+                    value={tempRule.data_redundant_value || ""}
+                    onChange={(e) =>
+                      setTempRule({
+                        ...tempRule,
+                        data_redundant_value: e.target.value,
+                      })
+                    }
+                    placeholder="Enter value"
+                    className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-600">Threshold</label>
+                  <input
+                    type="number"
+                    value={tempRule.data_redundant_threshold || ""}
+                    onChange={(e) =>
+                      setTempRule({
+                        ...tempRule,
+                        data_redundant_threshold: e.target.value,
+                      })
+                    }
+                    placeholder="Enter threshold"
+                    className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+            {tempRule.type === "regex" && (
+              <div>
+                <label className="text-sm text-gray-600">
+                  Cell Contains (Regex)
+                </label>
+                <input
+                  type="text"
+                  value={tempRule.cell_contains_value || ""}
+                  onChange={(e) =>
+                    setTempRule({
+                      ...tempRule,
+                      cell_contains_value: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. ^[A-Za-z]+$"
+                  className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             )}
             {/* ACTIONS */}

@@ -361,7 +361,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         value: tempRule.not_match_found,
       });
     }
-    alert(tempRule.type);
+
     if (tempRule.type === "dependency") {
       currentHeader.rules.push({
         type: "dependency",
@@ -497,16 +497,16 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     (appliedRuleDataType?.[0]?.value as string) || "string";
 
   return (
-    <div className="flex h-[600px] border rounded-2xl overflow-hidden bg-white shadow">
+    <div className="flex h-[600px] border rounded-2xl overflow-hidden bg-white shadow-sm mt-2">
       {/* LEFT PANEL */}
-      <div className="w-1/3 border-r bg-gray-50 flex flex-col">
+      <div className="flex flex-col w-1/3 border-r bg-gradient-to-b from-gray-50 to-gray-100">
         {/* HEADER */}
-        <div className="p-4 font-semibold text-gray-700 border-b">
+        <div className="p-4 font-semibold text-gray-800 border-b bg-white/70 backdrop-blur">
           Headers({filteredData.length})
         </div>
 
         {/* SEARCH INPUT */}
-        <div className="p-3 border-b bg-white">
+        <div className="p-3 bg-white border-b">
           <input
             type="text"
             placeholder="Search headers..."
@@ -517,44 +517,60 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         </div>
 
         {/* LIST */}
-        <div className="overflow-y-auto flex-1">
+        <div className="flex-1 overflow-y-auto bg-gray-50">
           {filteredData.length === 0 ? (
-            <div className="p-4 text-sm text-gray-400 text-center">
-              No headers found
+            <div className="p-6 text-sm text-center text-gray-400">
+              <div className="mb-2 text-3xl">📭</div>
+              <p className="font-medium text-gray-500">No headers found</p>
+              <p className="mt-1 text-xs text-gray-400">
+                Try adjusting your search
+              </p>
             </div>
           ) : (
-            filteredData.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedHeader(item.id)}
-                className={`px-4 py-3 cursor-pointer border-b text-sm flex justify-between items-center
-      ${
-        selectedHeader === item.id
-          ? "bg-blue-50 text-blue-600 font-medium"
-          : "hover:bg-gray-100"
-      }`}
-              >
-                <span className="truncate">{item.name}</span>
+            <div className="p-2 space-y-1">
+              {filteredData.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => setSelectedHeader(item.id)}
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-all
+          
+          ${
+            selectedHeader === item.id
+              ? "bg-white shadow-sm text-blue-700 font-medium border border-blue-600"
+              : "hover:bg-white hover:shadow-sm text-gray-800 border border-black"
+          }`}
+                >
+                  {/* NAME */}
+                  <span className="truncate">{item.name}</span>
 
-                {item.rules.length > 0 && (
-                  <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                    {item.rules.length}
-                  </span>
-                )}
-              </div>
-            ))
+                  {/* BADGE */}
+                  {item.rules.length > 0 && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full transition
+              ${
+                selectedHeader === item.id
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-gray-200 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600"
+              }`}
+                    >
+                      {item.rules.length}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 relative flex flex-col">
+      <div className="relative flex flex-col flex-1">
         {/* HEADER */}
-        <div className="p-4 border-b flex justify-between items-center">
+        <div className="flex items-center justify-between p-4 border-b">
           <h2 className="font-semibold text-gray-700">{current.name}</h2>
 
           <button
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 ease-in-out"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 active:scale-[0.98] transition"
             onClick={() => {
               setEditingRule(false);
               setTempRule({});
@@ -566,20 +582,24 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 p-6 overflow-y-auto">
           {/* EMPTY STATE */}
           [[[{JSON.stringify(current.rules)}]]]
           {current.rules.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500">
-              <p className="mb-4">No rules applied</p>
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <div className="mb-2 text-4xl">📄</div>
+              <p className="mb-3 font-medium">No rules yet</p>
+              <p className="mb-4 text-sm text-gray-400">
+                Start by adding your first rule
+              </p>
 
               <button
+                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 onClick={() => {
                   setEditingRule(false);
                   setTempRule({});
                   setIsModalOpen(true);
                 }}
-                className="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700"
               >
                 Add Rule
               </button>
@@ -589,7 +609,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
               {current.rules.map((rule, idx) => (
                 <div
                   key={idx}
-                  className="flex justify-between items-center border rounded-lg px-4 py-3 bg-gray-50"
+                  className="flex items-center justify-between px-4 py-3 border rounded-lg bg-gray-50"
                 >
                   <div className="text-sm text-gray-700">
                     {rule.type === "required" && (
@@ -670,7 +690,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                             ? " Required"
                             : ` ${rule.value.main_value}`}
                         </b>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="mt-1 text-xs text-gray-500">
                           {rule.value.sub_dependencies.map(
                             (s: any, i: number) => (
                               <div key={i}>
@@ -729,8 +749,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
 
                           setTempRule({
                             type: "data_redundant",
-                            data_redundant_value: val.value,
-                            data_redundant_threshold: val.threshold,
+                            data_redundant_value: val.data_redundant_value,
+                            data_redundant_threshold:
+                              val.data_redundant_threshold,
                           });
                         }
 
@@ -787,7 +808,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         }
                         setIsModalOpen(true);
                       }}
-                      className="text-blue-600 text-sm"
+                      className="text-sm text-blue-600"
                     >
                       <FiEdit size={16} />
                     </button>
@@ -805,10 +826,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         </div>
       </div>
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white w-[420px] rounded-2xl shadow-xl p-6">
             {/* HEADER */}
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="mb-4 text-lg font-semibold">
               {editingRule ? "Edit Rule" : "Add Rule"}
             </h2>
             {/* RULE TYPE */}
@@ -839,7 +860,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     }),
                   });
                 }}
-                className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
+                className="w-full px-3 py-2 mt-1 text-sm border rounded-lg"
               >
                 <option value="">Select</option>
 
@@ -918,7 +939,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             </div>
             {/* REQUIRED RULE */}
             {tempRule.type === "required" && (
-              <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-gray-600">Allow Empty?</span>
 
                 <input
@@ -948,7 +969,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                       data_type: e.target.value,
                     })
                   }
-                  className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
+                  className="w-full px-3 py-2 mt-1 text-sm border rounded-lg"
                 >
                   <option value="string">String</option>
                   <option value="alphabetic">Alphabetic</option>
@@ -974,7 +995,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         length_mode: e.target.value as any,
                       })
                     }
-                    className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
+                    className="w-full px-3 py-2 mt-1 text-sm border rounded-lg"
                   >
                     <option value="variable">Variable</option>
                     <option value="fixed">Fixed</option>
@@ -996,7 +1017,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           onChange={(e) =>
                             setTempRule({ ...tempRule, min: e.target.value })
                           }
-                          className="border rounded-lg px-3 py-2 text-sm"
+                          className="px-3 py-2 text-sm border rounded-lg"
                         />
                         <input
                           type="number"
@@ -1005,7 +1026,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           onChange={(e) =>
                             setTempRule({ ...tempRule, max: e.target.value })
                           }
-                          className="border rounded-lg px-3 py-2 text-sm"
+                          className="px-3 py-2 text-sm border rounded-lg"
                         />
                       </>
                     )}
@@ -1020,7 +1041,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           onChange={(e) =>
                             setTempRule({ ...tempRule, min: e.target.value })
                           }
-                          className="border rounded-lg px-3 py-2 text-sm"
+                          className="px-3 py-2 text-sm border rounded-lg"
                         />
                         <input
                           type="number"
@@ -1029,7 +1050,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           onChange={(e) =>
                             setTempRule({ ...tempRule, max: e.target.value })
                           }
-                          className="border rounded-lg px-3 py-2 text-sm"
+                          className="px-3 py-2 text-sm border rounded-lg"
                         />
                       </>
                     )}
@@ -1043,7 +1064,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           onChange={(e) =>
                             setTempRule({ ...tempRule, min: e.target.value })
                           }
-                          className="border rounded-lg px-3 py-2 text-sm"
+                          className="px-3 py-2 text-sm border rounded-lg"
                         />
                         <input
                           type="date"
@@ -1051,7 +1072,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           onChange={(e) =>
                             setTempRule({ ...tempRule, max: e.target.value })
                           }
-                          className="border rounded-lg px-3 py-2 text-sm"
+                          className="px-3 py-2 text-sm border rounded-lg"
                         />
                       </>
                     )}
@@ -1066,7 +1087,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     onChange={(e) =>
                       setTempRule({ ...tempRule, fixed: e.target.value })
                     }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    className="w-full px-3 py-2 text-sm border rounded-lg"
                   />
                 )}
               </div>
@@ -1085,7 +1106,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                       date_format: e.target.value,
                     })
                   }
-                  className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
+                  className="w-full px-3 py-2 mt-1 text-sm border rounded-lg"
                 >
                   {date_format_options.map((format) => (
                     <option key={format} value={format}>
@@ -1111,7 +1132,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                       })
                     }
                     placeholder="Enter value"
-                    className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 mt-1 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -1127,7 +1148,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                       })
                     }
                     placeholder="Enter threshold"
-                    className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 mt-1 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1147,7 +1168,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                     })
                   }
                   placeholder="e.g. ^[A-Za-z]+$"
-                  className="w-full mt-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 mt-1 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             )}
@@ -1245,7 +1266,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           other_value_main_dependency: e.target.value,
                         })
                       }
-                      className="w-full mt-2 border rounded-lg px-3 py-2 text-sm"
+                      className="w-full px-3 py-2 mt-2 text-sm border rounded-lg"
                     />
                   )}
                 </div>
@@ -1271,13 +1292,11 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
               >
                 Cancel
               </button>
-              {tempRule.type}
-              {tempRule.data_type}
               <button
                 onClick={() => {
                   applyRule();
                 }}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
               >
                 Save
               </button>

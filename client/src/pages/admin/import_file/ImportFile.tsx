@@ -138,17 +138,14 @@ const ImportFile: React.FC = () => {
       // attach rules JSON
       formData.append("rules", JSON.stringify(rulesData));
 
-      console.log("+++++++++++++++");
-      console.log(JSON.stringify(rulesData));
-      console.log("+++++++++++++++");
-      // const response = await apiClient.post(`admin/api/qa_file`, formData, {
-      //   withCredentials: true,
-      //   headers: {
-      //     "Content-Type": "multipart/form-data",
-      //   },
-      // });
+      const response = await apiClient.post(`admin/api/qa_file`, formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      // console.log("Validation Response:", response.data);
+      console.log("Validation Response:", response.data);
     } catch (error) {
       console.error("Validation Error:", error);
     } finally {
@@ -157,15 +154,15 @@ const ImportFile: React.FC = () => {
   };
   return (
     <div className="bg-gray-50">
-      <div className=" mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+      <div className="px-4 pb-6 mx-auto sm:px-6 lg:px-8">
         {/* Title */}
 
         <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
           {/* Upload Box */}
           {headers.length === 0 ? (
             <div>
-              <div className="text-center mb-6">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
+              <div className="mb-6 text-center">
+                <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">
                   Import File
                 </h1>
                 <p className="text-gray-500">
@@ -173,7 +170,7 @@ const ImportFile: React.FC = () => {
                 </p>
               </div>
               <div
-                className="border-2 border-dashed border-gray-300 rounded-xl px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-5 text-center cursor-pointer hover:border-black transition"
+                className="px-4 py-3 text-center transition border-2 border-gray-300 border-dashed cursor-pointer rounded-xl sm:px-6 sm:py-4 md:px-8 md:py-5 hover:border-black"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -207,27 +204,27 @@ const ImportFile: React.FC = () => {
 
               {/* Loader OUTSIDE */}
               {loading && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-white text-sm">Processing file...</p>
+                    <div className="w-10 h-10 border-4 border-white rounded-full sm:w-12 sm:h-12 border-t-transparent animate-spin"></div>
+                    <p className="text-sm text-white">Processing file...</p>
                   </div>
                 </div>
               )}
 
               {fileName && (
-                <p className="text-center text-sm text-blue-600 mt-3 break-all px-2">
+                <p className="px-2 mt-3 text-sm text-center text-blue-600 break-all">
                   Uploaded: {fileName}
                 </p>
               )}
             </div>
           ) : (
             <>
-              <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white/80 backdrop-blur border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
+              <div className="flex flex-col gap-4 px-5 py-4 mt-6 border border-gray-200 shadow-sm md:flex-row md:items-center md:justify-between bg-white/80 backdrop-blur rounded-2xl">
                 {/* LEFT SIDE → File Info */}
-                <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center min-w-0 gap-4">
                   {/* File Icon */}
-                  <div className="bg-blue-100 text-blue-600 p-3 rounded-xl">
+                  <div className="p-3 text-blue-600 bg-blue-100 rounded-xl">
                     <FaUpload className="text-xl" />
                   </div>
 
@@ -241,7 +238,7 @@ const ImportFile: React.FC = () => {
 
                     {/* Header Count Badge */}
                     <div className="mt-1">
-                      <span className="inline-block bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+                      <span className="inline-block px-3 py-1 text-xs text-gray-700 bg-gray-100 rounded-full">
                         {headers.length} Headers Detected
                       </span>
                     </div>
@@ -249,7 +246,7 @@ const ImportFile: React.FC = () => {
                 </div>
 
                 {/* RIGHT SIDE → Buttons */}
-                <div className="flex flex-wrap gap-3 justify-end">
+                <div className="flex flex-wrap justify-end gap-3">
                   {/* Upload New File */}
                   <button
                     type="button"
@@ -263,7 +260,7 @@ const ImportFile: React.FC = () => {
                     className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 py-2.5 px-5 rounded-xl font-medium hover:bg-gray-100 hover:shadow-sm transition-all duration-200"
                   >
                     <FaUpload className="text-sm" />
-                    Upload New
+                    Upload New file
                   </button>
 
                   {/* Run Validation */}

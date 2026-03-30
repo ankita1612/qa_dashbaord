@@ -325,7 +325,7 @@ export const validateRow = (
     }
     if(columnName==="sss")
     {
-      console.log(rule)
+     // console.log(rule)
     }
     // ✅ datatype check FIRST
     if (
@@ -808,7 +808,7 @@ export const validateRow = (
 
      if(columnName=="sss")
     {
-      console.log(rule.fixed_header_set)
+      //console.log(rule.fixed_header_set)
     }
     if (rule.fixed_header_set && !rule.fixed_header_set.has(strValue)) {
       if (columnValid) columnStat.invalid_records++;
@@ -840,7 +840,7 @@ export const validateRow = (
       if (columnValid) columnStat.invalid_records++;
       columnValid = false;
       rowValid = false;
-      columnStat.cell_start_with_end_with_error_count++;
+      columnStat.cell_start_with_error_count++;
       errorBuffer.add([
         rowNumber,
         columnName,
@@ -866,7 +866,7 @@ export const validateRow = (
       if (columnValid) columnStat.invalid_records++;
       columnValid = false;
       rowValid = false;
-      columnStat.cell_start_with_end_with_error_count++;
+      columnStat.cell_end_with_error_count++;
 
       errorBuffer.add([
         rowNumber,

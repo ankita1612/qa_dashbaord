@@ -102,7 +102,8 @@ class ImportFileController {
           );
       }
 
-      //start storing in excel first sheet
+     // start storing in excel first sheet
+
 // 1. Get stats first
 const column_wise_stats = result.column_wise_stats;
 const columns = Object.keys(column_wise_stats);
@@ -133,20 +134,18 @@ const filteredColumns = columns.filter((col) => {
   });
 });
 
-// 4. Safety check
-if (!filteredColumns.length) {
-  throw new Error("No columns with validation rules found");
-}
+// 👉 4. Use filteredColumns OR fallback to all columns
+const finalColumns = filteredColumns.length ? filteredColumns : columns;
 
-// 5. Metrics (based on filtered columns)
-const metrics = Object.keys(column_wise_stats[filteredColumns[0]]).filter(
+// 5. Metrics (based on available columns safely)
+const metrics = Object.keys(column_wise_stats[finalColumns[0]]).filter(
   (m) => m !== "error_msg"
 );
 
 // 6. Header Row
 const totalHeaderRow = totalsSheet.addRow([
   "Validation Type",
-  ...filteredColumns,
+  ...finalColumns,
 ]);
 
 totalHeaderRow.eachCell((cell) => {
@@ -158,8 +157,11 @@ totalHeaderRow.commit();
 // 7. Loop metrics
 for (const metric of metrics) {
   const row = totalsSheet.addRow([
-    metric.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    ...filteredColumns.map((c) => {
+    metric
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase()),
+
+    ...finalColumns.map((c) => {
       const val = column_wise_stats[c]?.[metric];
 
       if (val === null || val === undefined || Number.isNaN(val)) {
@@ -173,7 +175,8 @@ for (const metric of metrics) {
   row.getCell(1).font = { bold: true };
   row.commit();
 }
-      //end first sheet
+
+// end first sheet
 
       //show colom wise errors
       const errors_for_coloms: Record<string, string[]> = {};

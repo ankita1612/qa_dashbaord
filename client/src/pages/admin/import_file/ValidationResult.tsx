@@ -2,6 +2,8 @@ import { useState } from "react";
 import SummaryCard from "./SummaryCard";
 import { useNavigate } from "react-router-dom";
 import { FaUpload } from "react-icons/fa";
+import { CheckCircle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+
 const getFilteredColumns = (columnStats: any) => {
   return Object.entries(columnStats).filter(([_, stats]: any) => {
     const keys = Object.keys(stats);
@@ -60,33 +62,52 @@ const ValidationResult = ({ responseData, onUploadNew }: any) => {
         </a>
       </div>
       {/* 🔹 COLUMN LIST */}
-      <div className="bg-white border shadow-sm rounded-xl">
-        <div className="p-4 font-semibold text-gray-700 border-b">
-          Column Result
+      <div className="bg-white border border-gray-200 shadow-sm rounded-2xl">
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50 rounded-t-2xl">
+          <h2 className="text-sm font-semibold text-gray-700">
+            Column Results
+          </h2>
         </div>
 
+        {/* BODY */}
         <div className="divide-y">
-          {filteredColumns.map(([col, stats]: any) => {
-            const issues = Object.entries(stats).filter(
-              ([key, val]) =>
-                ![
-                  "total_records",
-                  "valid_records",
-                  "invalid_records",
-                  "error_msg",
-                ].includes(key) &&
-                val !== 0 &&
-                val !== null,
-            );
+          {filteredColumns.length === 0 ? (
+            // ✅ EMPTY STATE
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <CheckCircle className="mb-2 text-green-500" size={32} />
+              <p className="text-sm font-semibold text-green-600">
+                All validations passed
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                No issues were found in your uploaded data.
+              </p>
+            </div>
+          ) : (
+            filteredColumns.map(([col, stats]: any) => {
+              const issues = Object.entries(stats).filter(
+                ([key, val]) =>
+                  ![
+                    "total_records",
+                    "valid_records",
+                    "invalid_records",
+                    "error_msg",
+                  ].includes(key) &&
+                  val !== 0 &&
+                  val !== null,
+              );
 
-            return (
-              <div key={col} className="border-b">
-                <div className="px-4 py-3 transition hover:bg-gray-50">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* LEFT → Column + Issues in ONE ROW */}
+              return (
+                <div
+                  key={col}
+                  className="transition-all duration-200 hover:bg-gray-50"
+                >
+                  {/* ROW */}
+                  <div className="flex items-center justify-between gap-4 px-5 py-4">
+                    {/* LEFT */}
                     <div className="flex items-center flex-1 gap-3 overflow-hidden">
                       {/* Column Name */}
-                      <div className="font-medium text-gray-800 whitespace-nowrap">
+                      <div className="font-medium text-gray-800 truncate max-w-[180px]">
                         {col}
                       </div>
 
@@ -96,109 +117,61 @@ const ValidationResult = ({ responseData, onUploadNew }: any) => {
                           issues.map(([key, val]) => (
                             <span
                               key={key}
-                              className="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-full whitespace-nowrap"
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-full"
                             >
+                              <AlertCircle size={12} />
                               {key.replaceAll("_", " ")} ({val})
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-gray-400 whitespace-nowrap">
+                          <span className="flex items-center gap-1 text-xs text-green-600">
+                            <CheckCircle size={14} />
                             No issues
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* RIGHT → Button */}
-                    <div className="flex items-center shrink-0">
-                      <button
-                        onClick={() =>
-                          setExpandedColumn(expandedColumn === col ? null : col)
-                        }
-                        className="px-3 py-1.5 text-sm font-medium text-blue-600 transition bg-blue-50 rounded-lg hover:bg-blue-100"
-                      >
-                        {expandedColumn === col
-                          ? "Hide details"
-                          : "View details"}
-                      </button>
-                    </div>
+                    {/* RIGHT BUTTON */}
+                    <button
+                      onClick={() =>
+                        setExpandedColumn(expandedColumn === col ? null : col)
+                      }
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 transition bg-blue-50 rounded-lg hover:bg-blue-100"
+                    >
+                      {expandedColumn === col ? (
+                        <>
+                          Hide <ChevronUp size={16} />
+                        </>
+                      ) : (
+                        <>
+                          Details <ChevronDown size={16} />
+                        </>
+                      )}
+                    </button>
                   </div>
-                </div>
 
-                {/* EXPAND SECTION */}
-                {expandedColumn === col && (
-                  <div className="px-4 pb-4 text-sm text-gray-600 bg-gray-50">
-                    <span className="font-semibold text-gray-700">
-                      Invalid Types:
-                    </span>{" "}
-                    {errors_for_coloms[col]?.length > 0
-                      ? errors_for_coloms[col].join(", ")
-                      : "No errors"}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {/* EXPAND */}
+                  {expandedColumn === col && (
+                    <div className="px-5 pb-4 text-sm text-gray-600 duration-200 bg-gray-50 animate-in fade-in">
+                      <div className="p-3 bg-white border rounded-lg">
+                        <span className="font-semibold text-gray-700">
+                          Invalid Types:
+                        </span>
+                        <div className="mt-1 text-gray-600">
+                          {errors_for_coloms[col]?.length > 0
+                            ? errors_for_coloms[col].join(", ")
+                            : "No errors"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
-
-      {/* 🔹 MODAL */}
-      {selectedColumn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white w-[400px] rounded-xl shadow-lg p-5">
-            <h2 className="mb-3 text-lg font-semibold">
-              {selectedColumn.name} Details
-            </h2>
-
-            <div className="space-y-2 text-sm text-gray-700">
-              {Object.entries(selectedColumn.stats).map(([key, val]: any) => {
-                if (
-                  [
-                    "total_records",
-                    "valid_records",
-                    "invalid_records",
-                  ].includes(key)
-                )
-                  return null;
-
-                if (!val) return null;
-
-                return (
-                  <div key={key} className="flex justify-between">
-                    <span className="capitalize">
-                      {key.replaceAll("_", " ")}
-                    </span>
-                    <span className="font-medium">{val}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Error Messages */}
-            {selectedColumn.stats.error_msg?.length > 0 && (
-              <div className="mt-4">
-                <p className="mb-2 text-sm font-medium">Errors:</p>
-                <ul className="pl-5 space-y-1 text-sm text-red-600 list-disc">
-                  {selectedColumn.stats.error_msg.map(
-                    (err: string, i: number) => (
-                      <li key={i}>{err}</li>
-                    ),
-                  )}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex justify-end mt-5">
-              <button
-                onClick={() => setSelectedColumn(null)}
-                className="px-4 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

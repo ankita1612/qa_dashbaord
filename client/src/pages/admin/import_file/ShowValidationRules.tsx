@@ -279,19 +279,19 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     }
     if (tempRule.type === "cell_end_with") {
       if (!tempRule.cell_end_with || tempRule.cell_end_with.length === 0) {
-        toast.error("Please add at least one cell_end_with");
+        toast.error("Please add at least one cell end with");
         return;
       }
     }
     if (tempRule.type === "cell_start_with") {
       if (!tempRule.cell_start_with || tempRule.cell_start_with.length === 0) {
-        toast.error("Please add at least one cell_start_with");
+        toast.error("Please add at least one cell start with");
         return;
       }
     }
     if (tempRule.type === "not_match_found") {
       if (!tempRule.not_match_found || tempRule.not_match_found.length === 0) {
-        toast.error("Please add at least one not_match_found");
+        toast.error("Please add at least one blocked word");
         return;
       }
     }
@@ -1408,7 +1408,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
 
             {tempRule.type === "fixed_header" && (
               <TagInputRule
-                label="Fixed Header"
+                label="Fixed header"
                 values={tempRule.fixed_header || []}
                 onChange={(val) =>
                   setTempRule({ ...tempRule, fixed_header: val })
@@ -1417,7 +1417,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             )}
             {tempRule.type === "cell_start_with" && (
               <TagInputRule
-                label="Cell Start With Value"
+                label="Cell start with value"
                 values={tempRule.cell_start_with || []}
                 onChange={(val) =>
                   setTempRule({ ...tempRule, cell_start_with: val })
@@ -1426,7 +1426,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             )}
             {tempRule.type === "cell_end_with" && (
               <TagInputRule
-                label="Cell End With  Value"
+                label="Cell end with  value"
                 values={tempRule.cell_end_with || []}
                 onChange={(val) =>
                   setTempRule({ ...tempRule, cell_end_with: val })
@@ -1435,7 +1435,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             )}
             {tempRule.type === "not_match_found" && (
               <TagInputRule
-                label="Blocked Value"
+                label="Blocked value"
                 values={tempRule.not_match_found || []}
                 onChange={(val) =>
                   setTempRule({ ...tempRule, not_match_found: val })

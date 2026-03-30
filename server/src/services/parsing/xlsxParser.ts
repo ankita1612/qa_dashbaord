@@ -3,14 +3,37 @@ import { ErrorBuffer } from "../../utils/errorBuffer";
 import {
   ColumnRule,
   ColumnStats,
+  
 } from "../../interface/importedFile.interface";
 import {
   validateRow,
   getCellValue,
   prepareColumnRules,
 } from "../../validations/user.importedFile.validations";
-import { createColumnStats } from "../../utils/importFileDefaultColumnStats";
+import { createColumnStats,RULE_TO_STATS_MAP } from "../../utils/importFileDefaultColumnStats";
 
+
+
+export const createColumnStatsFromRules = (rules: any): ColumnStats => {
+  const baseStats: any = {
+    total_records: 0,
+    valid_records: 0,
+    invalid_records: 0,
+    error_msg: [],
+  };
+
+  Object.keys(rules).forEach((ruleKey) => {
+    const statKeys = RULE_TO_STATS_MAP[ruleKey];
+
+    if (statKeys) {
+      statKeys.forEach((key) => {
+        baseStats[key] = 0;
+      });
+    }
+  });
+
+  return baseStats;
+};
 export const xlsxParser = async (
   filePath: string,
   columnConfig: Record<string, ColumnRule>,
@@ -60,7 +83,8 @@ export const xlsxParser = async (
 
             headers.forEach((header) => {
               if (!header || typeof header !== "string") return;
-              columnStats[header] = createColumnStats();
+              const ruleConfig = columnConfig[header] || {};
+              columnStats[header] = createColumnStatsFromRules(ruleConfig);
             });
 
             continue;

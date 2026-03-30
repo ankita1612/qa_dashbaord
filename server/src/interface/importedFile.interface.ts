@@ -49,7 +49,7 @@ export interface SummaryReportQuery {
 }
 export interface ColumnRule {
   name: string;
-  data_type: "string" | "integer" | "number" | "boolean" | "date" | "email";
+  data_type?: "string" | "integer" | "number" | "boolean" | "date" | "email";
   has_empty?: boolean;
   data_redundant_value?: string | null;
   data_redundant_threshold?: number;
@@ -61,8 +61,8 @@ export interface ColumnRule {
   date_format?: string;
   dateRegex?: RegExp;
   cellContainsRegex?: RegExp;
-  cell_contains: boolean;
-  cell_contains_value: string;
+  cell_contains?: boolean;
+  cell_contains_value?: string;
   not_match_found?: string[];
   fixed_header?: string[];
   cell_start_with?: string[];
@@ -73,8 +73,10 @@ export interface ColumnRule {
   cell_end_with_normalized?: string[]; //for faster speed validation of end_with values
   not_match_found_normalized?: string[]; //for faster speed validation of blocked words
   redundantCounter?: Map<string, number>;
-  cellStartWithMessage: string;
-  cellEndWithMessage: string;
+  cellStartWithMessage?: string;
+  cellEndWithMessage?: string;
+  fixedHeaderMessage?: string;
+  blockwordsMessage?: string;
 }
 
 export interface ParserResult {

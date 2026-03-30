@@ -1,4 +1,17 @@
 import { ColumnStats } from "../interface/importedFile.interface";
+
+export const RULE_TO_STATS_MAP = {
+  has_empty: ["empty_count"],
+  data_type: ["datatype_error_count"],
+  data_length: ["length_validation_error_count"],
+  data_redundant: ["redundant_error_count"],
+  regex: ["regex_pattern_error_count"],
+  fixed_header: ["fixed_header_error_count"],
+  cell_start_with: ["cell_start_with_end_with_error_count"],
+  cell_end_with: ["cell_start_with_end_with_error_count"],
+  not_match_found: ["blocked_word_error_count"],
+  dependency: ["dependancy_error_count"],
+};
 export const errorMessageMap: Record<string, string> = {
   empty_count: "Value cannot be empty",
   datatype_error_count: "Datatype validation failed",

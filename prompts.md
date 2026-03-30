@@ -1,3 +1,11 @@
+generateJSON(){ if (rule.type === "dependency") {
+obj.dependency = {
+mode: rule?.value?.mode,
+main_value: rule?.value?.main_value,
+sub_dependencies: rule?.value?.sub_dependencies,
+};
+}}
+
 Rule: Dependency
 Features:
 Main dependency

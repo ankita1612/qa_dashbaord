@@ -63,7 +63,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       | "date_format"
       | "data_redundant"
       | "regex"
-      | "fixed_headers"
+      | "fixed_header"
       | "not_match_found"
       | "cell_end_with"
       | "cell_start_with"
@@ -80,7 +80,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     data_redundant_threshold?: string;
     cell_contains_value?: string;
 
-    fixed_headers?: string[];
+    fixed_header?: string[];
     not_match_found?: string[];
     cell_end_with?: string[];
     cell_start_with?: string[];
@@ -135,17 +135,101 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       return;
     }
     if (tempRule.type === "data_length") {
-      if (tempRule.length_mode === "fixed" && !tempRule.fixed) {
-        toast.error("Please enter fixed length");
-        return;
-      }
+      const dataTypeRule = current.rules?.find(
+        (rule) => rule.type === "data_type",
+      );
 
-      if (
-        tempRule.length_mode !== "fixed" &&
-        (!tempRule.min || !tempRule.max)
-      ) {
-        toast.error("Please enter min and max values");
-        return;
+      const dataType = dataTypeRule?.value || "string";
+
+      if (tempRule.length_mode === "fixed") {
+        if (!tempRule.fixed && tempRule.fixed !== 0) {
+          toast.error(
+            dataType === "date"
+              ? "Please enter fixed date"
+              : "Please enter fixed value",
+          );
+          return;
+        }
+
+        if (dataType === "date") {
+          const fixedDate = new Date(tempRule.fixed);
+
+          if (isNaN(fixedDate.getTime())) {
+            toast.error("Invalid date");
+            return;
+          }
+        } else {
+          // 🔢 NUMBER / LENGTH VALIDATION
+          const fixedVal = Number(tempRule.fixed);
+
+          if (isNaN(fixedVal)) {
+            toast.error("Fixed value must be a number");
+            return;
+          }
+
+          if (fixedVal < 0) {
+            toast.error("Fixed value cannot be negative");
+            return;
+          }
+        }
+      } else if (tempRule.length_mode === "variable") {
+        if (dataType === "date") {
+          const minDate = new Date(tempRule.min);
+          const maxDate = new Date(tempRule.max);
+
+          if (!tempRule.min) {
+            toast.error("Please enter minimum date");
+            return;
+          }
+
+          if (!tempRule.max) {
+            toast.error("Please enter maximum date");
+            return;
+          }
+
+          if (isNaN(minDate.getTime())) {
+            toast.error("Invalid minimum date");
+            return;
+          }
+
+          if (isNaN(maxDate.getTime())) {
+            toast.error("Invalid maximum date");
+            return;
+          }
+
+          if (minDate > maxDate) {
+            toast.error("Minimum date cannot be greater than maximum date");
+            return;
+          }
+        } else {
+          const minVal = Number(tempRule.min);
+          const maxVal = Number(tempRule.max);
+
+          if (tempRule.min === "" || tempRule.min === undefined) {
+            toast.error("Please enter minimum value");
+            return;
+          }
+
+          if (tempRule.max === "" || tempRule.max === undefined) {
+            toast.error("Please enter maximum value");
+            return;
+          }
+
+          if (isNaN(minVal)) {
+            toast.error("Minimum must be a number");
+            return;
+          }
+
+          if (isNaN(maxVal)) {
+            toast.error("Maximum must be a number");
+            return;
+          }
+
+          if (minVal > maxVal) {
+            toast.error("Minimum value cannot be greater than maximum value");
+            return;
+          }
+        }
       }
     }
 
@@ -187,8 +271,8 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       }
     }
 
-    if (tempRule.type === "fixed_headers") {
-      if (!tempRule.fixed_headers || tempRule.fixed_headers.length === 0) {
+    if (tempRule.type === "fixed_header") {
+      if (!tempRule.fixed_header || tempRule.fixed_header.length === 0) {
         toast.error("Please add at least one fixed header");
         return;
       }
@@ -299,7 +383,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         type: "data_redundant",
         value: {
           data_redundant_value: tempRule.data_redundant_value,
-          data_redundant_threshold: tempRule.data_redundant_threshold,
+          data_redundant_threshold: Number(tempRule.data_redundant_threshold),
         },
       });
     }
@@ -318,15 +402,16 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       });
     }
 
-    if (tempRule.type === "fixed_headers") {
+    if (tempRule.type === "fixed_header") {
       //   currentHeader.rules = currentHeader.rules.filter(
-      //     (r) => r.type !== "fixed_headers",
+      //     (r) => r.type !== "fixed_header",
       //   );
 
       currentHeader.rules.push({
-        type: "fixed_headers",
-        value: tempRule.fixed_headers,
+        type: "fixed_header",
+        value: tempRule.fixed_header,
       });
+      console.log(currentHeader);
     }
 
     if (tempRule.type === "cell_start_with") {
@@ -385,8 +470,91 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     const rule = getRuleName(tempRule.type);
     toast.success(`${rule} rule applied`);
   };
-
   const generateJSON = (currentHeader) => {
+    const result: any = {};
+
+    data.forEach((item) => {
+      const obj: any = {
+        name: item.name,
+      };
+
+      item.rules.forEach((rule) => {
+        if (rule.type === "required") {
+          obj.has_empty = rule.value;
+        }
+
+        if (rule.type === "data_type") {
+          obj.data_type = rule.value;
+        }
+
+        if (rule.type === "data_length") {
+          const val = rule.value;
+
+          obj.length_validation_type = val.mode;
+
+          if (val.mode === "fixed") {
+            obj.min_length = val.fixed;
+            obj.max_length = val.fixed;
+          } else {
+            obj.min_length = val.min;
+            obj.max_length = val.max;
+          }
+        }
+
+        if (rule.type === "date_format") {
+          obj.date_format = rule.value;
+        }
+
+        if (rule.type === "data_redundant") {
+          obj.data_redundant_value = rule.value.data_redundant_value;
+          obj.data_redundant_threshold = Number(
+            rule.value.data_redundant_threshold,
+          );
+        }
+
+        if (rule.type === "regex") {
+          obj.cell_contains = true;
+          obj.cell_contains_value = rule.value;
+        }
+
+        if (rule.type === "fixed_header") {
+          obj.fixed_header = rule.value;
+        }
+
+        if (rule.type === "cell_start_with") {
+          obj.cell_start_with = rule.value;
+        }
+
+        if (rule.type === "cell_end_with") {
+          obj.cell_end_with = rule.value;
+        }
+
+        if (rule.type === "not_match_found") {
+          obj.not_match_found = rule.value;
+        }
+
+        if (rule.type === "dependency") {
+          obj.dependency = {
+            main: {
+              header: currentHeader.name,
+              value:
+                rule?.value?.mode === "required"
+                  ? true
+                  : rule?.value?.main_value,
+            },
+            sub_dependencies: rule?.value?.sub_dependencies,
+          };
+        }
+      });
+
+      if (Object.keys(obj).length > 1) {
+        result[item.name] = obj;
+      }
+    });
+
+    return result;
+  };
+  const generateJSON111 = (currentHeader) => {
     console.log("========");
     console.log(currentHeader);
     console.log("========");
@@ -406,7 +574,36 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         if (rule.type === "data_length") {
           obj.data_length = rule.value;
         }
+        // if (rule.type === "data_length") {
+        //   const val = rule.value;
 
+        //   obj.length_validation_type = val.mode;
+
+        //   if (val.mode === "fixed") {
+        //     obj.min_length = val.fixed;
+        //     obj.max_length = val.fixed;
+        //   } else {
+        //     obj.min_length = val.min;
+        //     obj.max_length = val.max;
+        //   }
+        // }
+        //         if (rule.type === "regex") {
+        //   obj.cell_contains = true;
+        //   obj.cell_contains_value = rule.value;
+        // }
+        //         obj.dependency = {
+        //   main: {
+        //     header: currentHeader.name,
+        //     value:
+        //       rule?.value?.mode === "required"
+        //         ? true
+        //         : rule?.value?.main_value,
+        //   },
+        //   sub_dependencies: rule?.value?.sub_dependencies,
+        // };
+        //         obj.data_redundant_threshold = Number(
+        //   rule.value.data_redundant_threshold
+        // );
         if (rule.type === "date_format") {
           obj.date_format = rule.value;
         }
@@ -417,8 +614,8 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         if (rule.type === "regex") {
           obj.cell_contains_value = rule.value;
         }
-        if (rule.type === "fixed_headers") {
-          obj.fixed_headers = rule.value;
+        if (rule.type === "fixed_header") {
+          obj.fixed_header = rule.value;
         }
         if (rule.type === "cell_start_with") {
           obj.cell_start_with = rule.value;
@@ -461,7 +658,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       const deletedRule = currentHeader.rules[index];
 
       currentHeader.rules.splice(index, 1);
-
+      console.log(updated);
       setData(updated);
 
       // ✅ send updated JSON to parent
@@ -480,13 +677,11 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     if (ruleType === "regex") return "Regex";
     if (ruleType === "data_redundant") return "Data redundant and threshold";
     if (ruleType === "date_format") return "Date format";
-    if (ruleType === "fixed_headers") return "Fixed Header";
+    if (ruleType === "fixed_header") return "Fixed Header";
     if (ruleType === "cell_start_with") return "Cell start with";
     if (ruleType === "cell_end_with") return "Cell end with";
     if (ruleType === "not_match_found") return "Blocked value";
     if (ruleType === "dependency") return "Dependacy";
-
-    alert(ruleType);
   };
   const appliedRuleTypes = current.rules.map((r) => r.type);
   const appliedRuleDataType = current.rules.filter(
@@ -621,7 +816,13 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
 
                     {rule.type === "data_type" && (
                       <span>
-                        Data Type: <b>{rule.value}</b>
+                        Data Type:{" "}
+                        <b>
+                          {rule.value
+                            ? rule.value.charAt(0).toUpperCase() +
+                              rule.value.slice(1)
+                            : ""}
+                        </b>
                       </span>
                     )}
                     {rule.type === "data_length" && (
@@ -658,7 +859,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                       </span>
                     )}
 
-                    {rule.type === "fixed_headers" && (
+                    {rule.type === "fixed_header" && (
                       <span>
                         Fixed Headers:{" "}
                         <b>{(rule.value as string[]).join(", ")}</b>
@@ -763,10 +964,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           });
                         }
 
-                        if (rule.type === "fixed_headers") {
+                        if (rule.type === "fixed_header") {
                           setTempRule({
-                            type: "fixed_headers",
-                            fixed_headers: rule.value as string[],
+                            type: "fixed_header",
+                            fixed_header: rule.value as string[],
                           });
                         }
                         if (rule.type === "cell_start_with") {
@@ -906,8 +1107,8 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   Regex
                 </option>
                 <option
-                  value="fixed_headers"
-                  disabled={appliedRuleTypes.includes("fixed_headers")}
+                  value="fixed_header"
+                  disabled={appliedRuleTypes.includes("fixed_header")}
                 >
                   Fixed Headers
                 </option>
@@ -1003,7 +1204,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                 </div>
 
                 {/* VARIABLE */}
-                {tempRule.length_mode !== "fixed" && (
+                {tempRule.length_mode === "variable" && (
                   <div className="grid grid-cols-2 gap-3">
                     {/* STRING TYPES */}
                     {["string", "alphabetic", "email", "boolean"].includes(
@@ -1080,15 +1281,47 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                 )}
                 {/* FIXED */}
                 {tempRule.length_mode === "fixed" && (
-                  <input
-                    type="number"
-                    placeholder="Fixed Length"
-                    value={tempRule.fixed || ""}
-                    onChange={(e) =>
-                      setTempRule({ ...tempRule, fixed: e.target.value })
-                    }
-                    className="w-full px-3 py-2 text-sm border rounded-lg"
-                  />
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* STRING TYPES */}
+                    {["string", "alphabetic", "email", "boolean"].includes(
+                      currentDataType,
+                    ) && (
+                      <input
+                        type="number"
+                        placeholder="Fixed Value"
+                        value={tempRule.fixed || ""}
+                        onChange={(e) =>
+                          setTempRule({ ...tempRule, fixed: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-sm border rounded-lg"
+                      />
+                    )}
+
+                    {/* NUMBER */}
+                    {["integer", "float"].includes(currentDataType) && (
+                      <input
+                        type="number"
+                        placeholder="Fixed Number"
+                        value={tempRule.fixed || ""}
+                        onChange={(e) =>
+                          setTempRule({ ...tempRule, fixed: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-sm border rounded-lg"
+                      />
+                    )}
+
+                    {/* DATE */}
+                    {currentDataType === "date" && (
+                      <input
+                        type="date"
+                        value={tempRule.fixed || ""}
+                        onChange={(e) =>
+                          setTempRule({ ...tempRule, fixed: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-sm border rounded-lg"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -1173,18 +1406,18 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
               </div>
             )}
 
-            {tempRule.type === "fixed_headers" && (
+            {tempRule.type === "fixed_header" && (
               <TagInputRule
-                label="Header"
-                values={tempRule.fixed_headers || []}
+                label="Fixed Header"
+                values={tempRule.fixed_header || []}
                 onChange={(val) =>
-                  setTempRule({ ...tempRule, fixed_headers: val })
+                  setTempRule({ ...tempRule, fixed_header: val })
                 }
               />
             )}
             {tempRule.type === "cell_start_with" && (
               <TagInputRule
-                label="Start Value"
+                label="Cell Start With Value"
                 values={tempRule.cell_start_with || []}
                 onChange={(val) =>
                   setTempRule({ ...tempRule, cell_start_with: val })
@@ -1193,7 +1426,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             )}
             {tempRule.type === "cell_end_with" && (
               <TagInputRule
-                label="End Value"
+                label="Cell End With  Value"
                 values={tempRule.cell_end_with || []}
                 onChange={(val) =>
                   setTempRule({ ...tempRule, cell_end_with: val })
@@ -1282,7 +1515,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
             )}
 
             {/* ACTIONS */}
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-center gap-2 mt-6">
               <button
                 onClick={() => {
                   setIsModalOpen(false);
@@ -1298,7 +1531,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                 }}
                 className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
               >
-                Save
+                {editingRule ? "Edit Rule" : "Add Rule"}
               </button>
             </div>
           </div>

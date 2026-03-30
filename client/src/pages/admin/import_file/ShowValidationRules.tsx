@@ -692,9 +692,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     (appliedRuleDataType?.[0]?.value as string) || "string";
 
   return (
-    <div className="flex h-[600px] border rounded-2xl overflow-hidden bg-white shadow-sm mt-2">
+    <div className="flex h-[600px] border rounded-2xl bg-white shadow-sm mt-2">
       {/* LEFT PANEL */}
-      <div className="flex flex-col w-1/3 border-r bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="flex flex-col w-1/3 min-h-0 border-r bg-gradient-to-b from-gray-50 to-gray-100">
         {/* HEADER */}
         <div className="p-4 font-semibold text-gray-800 border-b bg-white/70 backdrop-blur">
           Headers({filteredData.length})
@@ -712,7 +712,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         </div>
 
         {/* LIST */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="flex-1 min-h-0 overflow-y-auto bg-gray-50">
           {filteredData.length === 0 ? (
             <div className="p-6 text-sm text-center text-gray-400">
               <div className="mb-2 text-3xl">📭</div>
@@ -759,7 +759,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="relative flex flex-col flex-1">
+      <div className="relative flex flex-col flex-1 min-h-0">
         {/* HEADER */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="font-semibold text-gray-700">{current.name}</h2>
@@ -777,7 +777,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 min-h-0 p-6 overflow-y-auto">
           {/* EMPTY STATE */}
           [[[{JSON.stringify(current.rules)}]]]
           {current.rules.length === 0 ? (

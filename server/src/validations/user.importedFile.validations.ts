@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
+import {RULE_TO_STATS_MAP } from "../utils/importFileDefaultColumnStats";
+
 import ApiError from "../utils/api.error";
 import { param } from "express-validator";
 import { ColumnRule, ColumnStats } from "../interface/importedFile.interface";
 import { ErrorBuffer } from "../utils/errorBuffer";
-const debug = 1;
+const debug = 0;
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const stringRegex = /^.*$/s;
 const alphabeticsRegex = /^[a-zA-Z ]*$/;
@@ -20,6 +22,27 @@ const validBooleanValues = new Set([
   "disabled",
   "0",
 ]);
+
+export const createColumnStatsFromRules = (rules: any): ColumnStats => {
+  const baseStats: any = {
+    total_records: 0,
+    valid_records: 0,
+    invalid_records: 0,
+    error_msg: [],
+  };
+
+  Object.keys(rules).forEach((ruleKey) => {
+    const statKeys = RULE_TO_STATS_MAP[ruleKey];
+
+    if (statKeys) {
+      statKeys.forEach((key) => {
+        baseStats[key] = 0;
+      });
+    }
+  });
+
+  return baseStats;
+};
 export const validateId = [param("id").isMongoId().withMessage("Invalid ID")];
 export const validateAdd = [];
 export const validateEdit = [];

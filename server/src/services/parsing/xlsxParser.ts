@@ -9,31 +9,9 @@ import {
   validateRow,
   getCellValue,
   prepareColumnRules,
+  createColumnStatsFromRules
 } from "../../validations/user.importedFile.validations";
-import { createColumnStats,RULE_TO_STATS_MAP } from "../../utils/importFileDefaultColumnStats";
 
-
-
-export const createColumnStatsFromRules = (rules: any): ColumnStats => {
-  const baseStats: any = {
-    total_records: 0,
-    valid_records: 0,
-    invalid_records: 0,
-    error_msg: [],
-  };
-
-  Object.keys(rules).forEach((ruleKey) => {
-    const statKeys = RULE_TO_STATS_MAP[ruleKey];
-
-    if (statKeys) {
-      statKeys.forEach((key) => {
-        baseStats[key] = 0;
-      });
-    }
-  });
-
-  return baseStats;
-};
 export const xlsxParser = async (
   filePath: string,
   columnConfig: Record<string, ColumnRule>,

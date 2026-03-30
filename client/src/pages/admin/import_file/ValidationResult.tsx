@@ -153,17 +153,75 @@ const ValidationResult = ({ responseData, onUploadNew }: any) => {
 
                   {/* EXPAND */}
                   {expandedColumn === col && (
-                    <div className="px-5 pb-4 text-sm text-gray-600 duration-200 bg-gray-50 animate-in fade-in">
-                      <div className="p-3 bg-white border rounded-lg">
-                        <span className="font-semibold text-gray-700">
-                          Invalid Types:
-                        </span>
-                        <div className="mt-1 text-gray-600">
-                          {errors_for_coloms[col]?.length > 0
-                            ? errors_for_coloms[col].join(", ")
-                            : "No errors"}
+                    <div className="px-5 pb-5 space-y-4 bg-gray-50">
+                      {/* 🔹 SUMMARY BLOCK */}
+                      <div className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
+                        <p className="mb-2 text-sm font-semibold text-gray-700">
+                          Invalid Types
+                        </p>
+
+                        <div className="flex flex-wrap gap-2">
+                          {errors_for_coloms[col]?.length > 0 ? (
+                            errors_for_coloms[col].map((err, i) => (
+                              <span
+                                key={i}
+                                className="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-full"
+                              >
+                                {err}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-green-600">
+                              No issues found
+                            </span>
+                          )}
                         </div>
                       </div>
+
+                      {/* 🔹 ERROR DETAILS */}
+                      {(stats.error_msg && stats.error_msg.length > 0) ?? (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
+                          {/* Header */}
+                          <div className="sticky top-0 z-10 px-4 py-3 bg-white border-b rounded-t-xl">
+                            <p className="text-sm font-semibold text-gray-700">
+                              Error Details
+                            </p>
+                          </div>
+
+                          {/* Content */}
+                          {stats.error_msg && stats.error_msg.length > 0 ? (
+                            <div className="max-h-[320px] overflow-y-auto divide-y">
+                              {stats.error_msg.map((err, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center gap-3 px-4 py-2 text-xs transition hover:bg-gray-50"
+                                >
+                                  {/* Row */}
+                                  <span className="font-semibold text-gray-600 whitespace-nowrap">
+                                    Row {err.row}
+                                  </span>
+
+                                  {/* Type Badge */}
+                                  <span className="px-2 py-0.5 text-[11px] font-medium text-red-600 bg-red-100 rounded whitespace-nowrap">
+                                    {err.error_type}
+                                  </span>
+
+                                  {/* Description */}
+                                  <span className="text-gray-700 truncate">
+                                    {err.error_description}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="px-4 py-6 text-center">
+                              <p className="text-xs text-green-600">
+                                No errors found 🎉
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

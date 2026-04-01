@@ -1,71 +1,83 @@
-const oneYearAgo = new Date();
-oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-const year = oneYearAgo.getFullYear();
-const month = String(oneYearAgo.getMonth() + 1).padStart(2, "0"); // 01-12
-const day = String(oneYearAgo.getDate()).padStart(2, "0"); // 01-31
-
-export const DEFAULTS = {
-  allowedExtensions: [".xlsx", ".xls", ".csv", ".json"],
-  dataTypes: [
-    "string",
-    "alphabetic",
-    "integer",
-    "float",
-    "boolean",
-    "date",
-    "email",
-  ],
-  stringTypes: ["string", "alphabetic", "boolean", "email"],
-  numberTypes: ["integer", "float"],
-  date_format_options: [
-    "YYYY-MM-DD",
-    "DD-MM-YYYY",
-    "MM-DD-YYYY",
-    "YYYY/MM/DD",
-    "DD/MM/YYYY",
-    "MM/DD/YYYY",
-    "YYYY-MM-DD HH:mm:ss",
-    "DD-MM-YYYY HH:mm:ss",
-    "MM/DD/YYYY HH:mm:ss",
-    "YYYY-MM-DDTHH:mm:ss",
-    "DD-MM-YYYY h:i:s a",
-    "MM/DD/YYYY h:i a",
-    "YYYY-MM-DD h:i:s A",
-    "DD MMM YYYY",
-    "MMM DD, YYYY",
-    "MMMM DD, YYYY",
-    "DD Month YYYY",
-    "DD-MM-YY",
-    "MM/DD/YY",
-    "DD_MM_YYYY",
-    "MM_DD_YYYY",
-    "YYYY_MM_DD",
-    "DD_MM_YYYY h:i:s a",
-    "MM_DD_YYYY h:i:s a",
-    "YYYY_MM_DD h:i:s a",
-    "DD_MM_YYYY HH:mm:ss",
-    "MM_DD_YYYY HH:mm:ss",
-    "YYYY_MM_DD HH:mm:ss",
-  ],
-  default_length_validation_value: "variable",
-  def_var_min_len_str: 1,
-  def_var_max_len_str: 500,
-  def_var_min_len_num: 1,
-  def_var_max_len_num: 500,
-
-  def_var_min_len_date: `${year}-${month}-${day}`,
-  def_var_max_len_date: new Date().toISOString().slice(0, 10),
-  def_fixed_date: `${year}-${month}-${day}`,
-  def_fixed_length_str: 500,
-  def_fixed_length_num: 500,
-  def_cell_contains_value: 1,
-  def_apply_length_validation: 0,
-  def_str_regex: "^.*$",
-  def_alphabetic_regex: "^[a-zA-Z ]+$",
-  def_boolean_regex: "^(True|Yes|Enabled|1|False|No|Disabled|0)$",
-  def_int_regex: "^[0-9]+$",
-  def_float_regex: "^[0-9]+(\\.[0-9]+)?$",
-  def_email_regex: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-  def_date_regex: "^\\d{4}-\\d{2}-\\d{2}$",
+export const getRuleName = (ruleType: string) => {
+  if (ruleType === "required") return "Required";
+  if (ruleType === "data_type") return "Data Type";
+  if (ruleType === "data_length") return "Length type";
+  if (ruleType === "regex") return "Regex";
+  if (ruleType === "data_redundant") return "Data redundant and threshold";
+  if (ruleType === "date_format") return "Date format";
+  if (ruleType === "fixed_header") return "Fixed Value";
+  if (ruleType === "cell_start_with") return "Cell start with";
+  if (ruleType === "cell_end_with") return "Cell end with";
+  if (ruleType === "not_match_found") return "Blocked value";
+  if (ruleType === "dependency") return "Dependency";
 };
+export const DATA_TYPE_OPTIONS = [
+  { value: "string", label: "String" },
+  { value: "alphabetic", label: "Alphabetic" },
+  { value: "integer", label: "Integer" },
+  { value: "float", label: "Float" },
+  { value: "boolean", label: "Boolean" },
+  { value: "date", label: "Date" },
+  { value: "email", label: "Email" },
+];
+export const RULE_OPTIONS = [
+  { value: "required", label: "Required" },
+  { value: "data_type", label: "Data Type" },
+  { value: "data_length", label: "Data Length" },
+  {
+    value: "date_format",
+    label: "Date Format",
+    show: (ctx) => ctx.currentDataType === "date",
+  },
+  { value: "data_redundant", label: "Data Redundant & Threshold" },
+  { value: "regex", label: "Regex" },
+  { value: "fixed_header", label: "Fixed Value" },
+  { value: "cell_start_with", label: "Cell Start With" },
+  { value: "cell_end_with", label: "Cell End With" },
+  { value: "not_match_found", label: "Blocked Value" },
+  { value: "dependency", label: "Dependency" },
+];
+export const RULE_LABELS = {
+  required: "Required",
+  data_type: "Data Type",
+  data_length: "Length",
+  date_format: "Date Format",
+  data_redundant: "Redundant Value",
+  regex: "Regex",
+  fixed_header: "Fixed Values",
+  not_match_found: "Blocked value",
+  cell_end_with: "Cell End With",
+  cell_start_with: "Cell Start With",
+  dependency: "",
+};
+
+export const date_format_options = [
+  "YYYY-MM-DD",
+  "DD-MM-YYYY",
+  "MM-DD-YYYY",
+  "YYYY/MM/DD",
+  "DD/MM/YYYY",
+  "MM/DD/YYYY",
+  "YYYY-MM-DD HH:mm:ss",
+  "DD-MM-YYYY HH:mm:ss",
+  "MM/DD/YYYY HH:mm:ss",
+  "YYYY-MM-DDTHH:mm:ss",
+  "DD-MM-YYYY h:i:s a",
+  "MM/DD/YYYY h:i a",
+  "YYYY-MM-DD h:i:s A",
+  "DD MMM YYYY",
+  "MMM DD, YYYY",
+  "MMMM DD, YYYY",
+  "DD Month YYYY",
+  "DD-MM-YY",
+  "MM/DD/YY",
+  "DD_MM_YYYY",
+  "MM_DD_YYYY",
+  "YYYY_MM_DD",
+  "DD_MM_YYYY h:i:s a",
+  "MM_DD_YYYY h:i:s a",
+  "YYYY_MM_DD h:i:s a",
+  "DD_MM_YYYY HH:mm:ss",
+  "MM_DD_YYYY HH:mm:ss",
+  "YYYY_MM_DD HH:mm:ss",
+];

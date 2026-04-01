@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { FaPlus } from "react-icons/fa";
 import { FiEdit, FiTrash2, FiSave } from "react-icons/fi";
@@ -15,7 +15,7 @@ const TagInputRule: React.FC<Props> = ({ label, values, onChange }) => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     if (!input.trim()) {
       toast.error(`Please enter ${label}`);
       return;
@@ -25,11 +25,14 @@ const TagInputRule: React.FC<Props> = ({ label, values, onChange }) => {
       toast.error(`${label} already exists`);
       return;
     }
-
+    if (input.length > 100) {
+      toast.error("Max 100 characters allowed");
+      return;
+    }
     onChange([...values, input.trim()]);
     setInput("");
     toast.success(`${label} added`);
-  };
+  }, [input, values, onChange, label]);
 
   const handleDelete = (idx: number) => {
     const updated = [...values];
@@ -60,12 +63,12 @@ const TagInputRule: React.FC<Props> = ({ label, values, onChange }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={`Enter ${label}`}
-          className="flex-1 px-3 py-2 text-sm border rounded-lg"
+          className="flex-1 px-3 py-2 text-base border rounded-lg"
         />
 
         <button
           onClick={handleAdd}
-          className="px-3 py-2 text-sm text-white bg-blue-600 rounded-lg"
+          className="px-3 py-2 text-base text-white bg-blue-600 rounded-lg"
         >
           <FaPlus className="w-4 h-4" />
         </button>
@@ -81,7 +84,7 @@ const TagInputRule: React.FC<Props> = ({ label, values, onChange }) => {
       <div className="space-y-2 overflow-y-auto max-h-40">
         {values.map((item, idx) => (
           <div
-            key={idx}
+            key={item}
             className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50"
           >
             {editIndex === idx ? (
@@ -89,26 +92,26 @@ const TagInputRule: React.FC<Props> = ({ label, values, onChange }) => {
                 <input
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="flex-1 px-2 py-1 text-sm border rounded"
+                  className="flex-1 px-2 py-1 text-base border rounded"
                 />
 
                 <button
                   onClick={() => handleSaveEdit(idx)}
-                  className="text-sm text-green-600"
+                  className="text-base text-green-600"
                 >
                   <FiSave size={18} />
                 </button>
 
                 <button
                   onClick={() => setEditIndex(null)}
-                  className="text-sm text-gray-500"
+                  className="text-base text-gray-500"
                 >
                   <MdClear size={18}></MdClear>
                 </button>
               </div>
             ) : (
               <>
-                <span className="text-sm">{item}</span>
+                <span className="text-base">{item}</span>
 
                 <div className="flex gap-3">
                   <button
@@ -116,14 +119,14 @@ const TagInputRule: React.FC<Props> = ({ label, values, onChange }) => {
                       setEditIndex(idx);
                       setEditValue(item);
                     }}
-                    className="text-sm text-blue-600"
+                    className="text-base text-blue-600"
                   >
                     <FiEdit size={18} />
                   </button>
 
                   <button
                     onClick={() => handleDelete(idx)}
-                    className="text-sm text-red-500"
+                    className="text-base text-red-500"
                   >
                     <FiTrash2 size={18} />
                   </button>

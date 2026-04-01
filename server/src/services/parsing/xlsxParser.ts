@@ -3,13 +3,13 @@ import { ErrorBuffer } from "../../utils/errorBuffer";
 import {
   ColumnRule,
   ColumnStats,
-  
 } from "../../interface/importedFile.interface";
 import {
   validateRow,
   getCellValue,
   prepareColumnRules,
-  createColumnStatsFromRules
+  createColumnStatsFromRules,
+  extractDependencyColumns,
 } from "../../validations/user.importedFile.validations";
 
 export const xlsxParser = async (
@@ -62,9 +62,22 @@ export const xlsxParser = async (
             headers.forEach((header) => {
               if (!header || typeof header !== "string") return;
               const ruleConfig = columnConfig[header] || {};
-              columnStats[header] = createColumnStatsFromRules(ruleConfig);
+              columnStats[header] = createColumnStatsFromRules(
+                ruleConfig,
+                "not_add_dependency",
+              );
             });
+            const dependencyColumns = extractDependencyColumns(columnConfig);
 
+            dependencyColumns.forEach((col) => {
+              columnStats[col] ??= createColumnStatsFromRules(
+                {
+                  dependency: true,
+                },
+                "add_dependency",
+              );
+              columnStats[col].dependancy_error_count ??= 0;
+            });
             continue;
           }
 

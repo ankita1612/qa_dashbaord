@@ -301,9 +301,9 @@ export const validateRow = (
     if (strValue !== "") {
       columnStat.total_records++;
     }
-    //has_empty
+    //is_required
 
-    if (!rule.has_empty && strValue === "") {
+    if (!rule.is_required && strValue === "") {
       columnStat.empty_count++;
       if (columnValid) columnStat.invalid_records++; //set this condition coz if colom has multiple validsation failed then invalid count was incremented so wrong invalid count was coming
 
@@ -341,7 +341,7 @@ export const validateRow = (
       const value = String(strValue).trim();
 
       if (rule.cellContainsRegex && !rule.cellContainsRegex.test(value)) {
-        columnStat.pattern_error_count++;
+        columnStat.regex_pattern_error_count++;
         if (columnValid) columnStat.invalid_records++;
         columnValid = false;
         rowValid = false;
@@ -813,14 +813,14 @@ export const validateRow = (
       errorBuffer.add([
         rowNumber,
         columnName,
-        "Fixed Header Value Error",
+        "Fixed Value Error",
         `${strValue} not allowed`,
       ]);
       if (debug == 1)
         columnStat.error_msg.push({
           row: rowNumber,
           column: columnName,
-          error_type: "Fixed Header Value Error",
+          error_type: "Fixed Value Error",
           error_description: `${strValue} not allowed`,
         });
     }

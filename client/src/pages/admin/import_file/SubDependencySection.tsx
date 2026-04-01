@@ -1,15 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import { ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
+type SubDependency = {
+  headers: string[];
+  mode: "required" | "other";
+  value?: string;
+};
 
-const SubDependencySection = ({
+type TempRule = {
+  sub_headers?: string[];
+  sub_mode?: "required" | "other";
+  sub_value?: string;
+  sub_dependencies?: SubDependency[];
+};
+
+type Props = {
+  tempRule: TempRule;
+  setTempRule: React.Dispatch<React.SetStateAction<TempRule>>;
+  headers: string[];
+  currentHeader: string;
+};
+const SubDependencySection: React.FC<Props> = ({
   tempRule,
   setTempRule,
   headers,
   currentHeader,
 }: any) => {
-  const availableHeaders = headers.filter((h: string) => h !== currentHeader);
+  const availableHeaders = useMemo(
+    () => headers.filter((h) => h !== currentHeader),
+    [headers, currentHeader],
+  );
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     if (!tempRule.sub_headers || tempRule.sub_headers.length === 0) {
       toast.error("Select at least one header");
       return;
@@ -23,13 +46,12 @@ const SubDependencySection = ({
     const existing = tempRule.sub_dependencies || [];
 
     // ✅ Exclude current editing item (important for edit case)
-    const usedHeaders = existing
-      .filter((_, idx) => idx !== editingIndex)
-      .flatMap((s: any) => s.headers);
-
-    const duplicate = tempRule.sub_headers.some((h: string) =>
-      usedHeaders.includes(h),
+    const usedHeaders = new Set(
+      existing
+        .filter((_, idx) => idx !== editingIndex)
+        .flatMap((s) => s.headers),
     );
+    const duplicate = tempRule.sub_headers.some((h) => usedHeaders.has(h));
 
     if (duplicate) {
       toast.error("Header already used");
@@ -62,11 +84,11 @@ const SubDependencySection = ({
     });
 
     setEditingIndex(null); // reset edit mode
-  };
+  }, [tempRule, editingIndex, setTempRule]);
 
   return (
     <div className="space-y-4 border-t pt-4">
-      <h3 className="text-sm font-semibold">Sub Dependencies</h3>
+      <h3 className="text-base font-semibold">Sub Dependencies</h3>
 
       {/* MULTISELECT */}
       <select
@@ -89,7 +111,7 @@ const SubDependencySection = ({
 
       {/* RADIO */}
       <div className="flex gap-4">
-        <label>
+        <label className="flex items-center gap-2 text-base">
           <input
             type="radio"
             checked={(tempRule.sub_mode ?? "required") === "required"}
@@ -98,7 +120,7 @@ const SubDependencySection = ({
           Required
         </label>
 
-        <label>
+        <label className="flex items-center gap-2 text-base">
           <input
             type="radio"
             checked={(tempRule.sub_mode ?? "required") === "other"}
@@ -137,9 +159,9 @@ const SubDependencySection = ({
               sub_value: "",
             });
           }}
-          className="text-sm text-gray-500 underline"
+          className="ml-2 px-4 py-2 border rounded-lg"
         >
-          Cancel Edit
+          Cancel
         </button>
       )}
 
@@ -149,8 +171,14 @@ const SubDependencySection = ({
           key={i}
           className="flex justify-between items-center bg-gray-100 px-3 py-2 rounded"
         >
-          <div className="text-sm">
-            {s.headers.join(", ")} → {s.mode} {s.value && <b>({s.value})</b>}
+          <div className="flex items-center gap-1 text-base">
+            <span>{s.headers.join(", ")}</span>
+
+            <ArrowRight size={12} className="text-gray-400 inline-block" />
+
+            <span>
+              {s.mode} {s.value && <b>({s.value})</b>}
+            </span>
           </div>
 
           <div className="flex gap-2">
@@ -168,7 +196,7 @@ const SubDependencySection = ({
               }}
               className="text-blue-600 text-xs"
             >
-              Edit
+              <FiEdit size={18} />
             </button>
 
             {/* DELETE */}
@@ -187,7 +215,7 @@ const SubDependencySection = ({
               }}
               className="text-red-500 text-xs"
             >
-              Delete
+              <FiTrash2 size={18} />
             </button>
           </div>
         </div>
@@ -196,4 +224,4 @@ const SubDependencySection = ({
   );
 };
 
-export default SubDependencySection;
+export default React.memo(SubDependencySection);

@@ -1,4 +1,5 @@
-import { FaRuler } from "react-icons/fa";
+import { ArrowRight } from "lucide-react";
+
 import { FiList } from "react-icons/fi";
 import { GoDotFill } from "react-icons/go";
 import ErrorBadge from "./ErrorBadge";
@@ -162,9 +163,15 @@ const AppliedRules = ({
                 return (
                   <div
                     key={index}
-                    className="text-base font-semibold text-black"
+                    className="flex items-center gap-1 text-base font-semibold text-black break-words"
                   >
-                    {index + 1}) {left} → {right}
+                    <FiList size={16} />
+                    {left}{" "}
+                    <ArrowRight
+                      size={12}
+                      className="inline-block text-gray-400"
+                    />{" "}
+                    {right}
                   </div>
                 );
               });
@@ -190,8 +197,11 @@ const AppliedRules = ({
                 Dependency (From {dep.parent})
               </div>
 
-              <div className="mt-1 text-base font-semibold text-black">
-                If {parentText} → {expectedText}
+              <div className="flex items-center gap-1 text-base font-semibold text-black break-words">
+                <FiList size={16} />
+                If {parentText}{" "}
+                <ArrowRight size={12} className="inline-block text-gray-400" />{" "}
+                {expectedText}
               </div>
 
               <div className="flex items-center gap-1 mt-1 text-base text-red-600">
@@ -267,7 +277,7 @@ const AppliedRules = ({
               </span>
             </div>
             <div className="flex items-center gap-1 mt-1 text-base text-red-600">
-              <ErrorBadge count={issueMap.errorCount} label={key} />
+              <ErrorBadge count={errorCount} label={key} />
             </div>
           </div>
         );

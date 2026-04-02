@@ -3,6 +3,7 @@ import { ToggleRight } from "lucide-react";
 import TagInputRule from "./TagInputRule";
 import SubDependencySection from "./SubDependencySection";
 import { MdClear } from "react-icons/md";
+import { useRef, useEffect } from "react";
 
 import {
   DATA_TYPE_OPTIONS,
@@ -35,11 +36,28 @@ const RuleModal: React.FC<Props> = ({
   headers,
   currentHeader,
 }) => {
+  const modalRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 relative">
+      <div
+        ref={modalRef}
+        className="bg-white w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 relative"
+      >
         {/* CLOSE BUTTON */}
         <button
           onClick={onClose}
@@ -51,7 +69,7 @@ const RuleModal: React.FC<Props> = ({
         {/* HEADER */}
         <div className="mb-6 border-b pb-3">
           <h2 className="mb-4 text-xl font-semibold text-gray-800">
-            {editingRule ? "Edit Rule" : "Add Rule"}
+            {editingRule ? "Edit Rule" : "Add Rule"} for '{currentHeader}'
           </h2>
           <p className="text-xs text-gray-500 mt-1">
             Configure validation rules for your selected column
@@ -104,13 +122,7 @@ const RuleModal: React.FC<Props> = ({
             ))}
           </select>
         </div>
-        {/* REQUIRED RULE */}
-        {tempRule.type === "required" && (
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-base text-gray-600">Field required?</span>
-            <ToggleRight className="text-blue-400" size={28} />
-          </div>
-        )}
+
         {/* DATA TYPE RULE */}
         {tempRule.type === "data_type" && (
           <>
@@ -213,7 +225,7 @@ const RuleModal: React.FC<Props> = ({
             {tempRule.length_mode === "variable" && (
               <div className="grid grid-cols-2 gap-3">
                 {/* STRING TYPES */}
-                {["string", "alphabetic", "email", "boolean"].includes(
+                {["string", "alphabetic", "boolean"].includes(
                   currentDataType,
                 ) && (
                   <>
@@ -289,7 +301,7 @@ const RuleModal: React.FC<Props> = ({
             {tempRule.length_mode === "fixed" && (
               <div className="grid grid-cols-1 gap-3">
                 {/* STRING TYPES */}
-                {["string", "alphabetic", "email", "boolean"].includes(
+                {["string", "alphabetic", "boolean"].includes(
                   currentDataType,
                 ) && (
                   <input

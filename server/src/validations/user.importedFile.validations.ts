@@ -7,7 +7,7 @@ import { param } from "express-validator";
 import { ColumnRule, ColumnStats } from "../interface/importedFile.interface";
 import { ErrorBuffer } from "../utils/errorBuffer";
 const debug = 1;
-const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const stringRegex = /^.*$/s;
 const alphabeticsRegex = /^[a-zA-Z ]*$/;
 const integerRegex = /^-?\d+$/;
@@ -64,7 +64,7 @@ export const createColumnStatsFromRules = (
     if (dependency_option == "not_add_dependency" && ruleKey == "dependency") {
       return;
     }
-    
+
     const statKeys = RULE_TO_STATS_MAP[ruleKey];
 
     if (statKeys) {
@@ -95,7 +95,6 @@ export const prepareColumnRules = (ruleMap: Record<string, ColumnRule>) => {
       rule.cell_start_with_normalized = [value];
       // message
       rule.cellStartWithMessage = value;
-      
     }
 
     if (rule.cell_end_with?.length) {
@@ -138,6 +137,9 @@ export const prepareColumnRules = (ruleMap: Record<string, ColumnRule>) => {
     if (rule.cell_start_with) {
       rule.cellStartWithMessage = String(rule.cell_start_with);
     }
+    if (rule.not_match_found) {
+      rule.blockwordsMessage = rule.not_match_found.join(", ");
+    }
     if (rule.cell_end_with) {
       rule.cellEndWithMessage = rule.cell_end_with.join(", ");
     }
@@ -163,7 +165,7 @@ export const getCellValue = (cell: any, dataType?: string): string => {
   if (cell === null || cell === undefined) return "";
 
   // ✅ Only convert to date if column expects date
-  
+
   if (dataType === "date" && typeof cell === "number") {
     const jsDate = excelDateToJSDate(cell);
     return formatDate(jsDate);
@@ -335,18 +337,17 @@ export const validateRow = (
   for (let i = 0; i < headers.length; i++) {
     let datatype_validation_checked = 0;
     const columnName = headers[i];
-    
+
     const rule = ruleMap[columnName];
-    
+
     if (!rule) continue;
     const dataType = rule.data_type;
 
     const columnStat = columnStats[columnName];
-   
+
     if (!columnStat) continue;
     let columnValid = true;
-    console.log("+++calling me++++")
-    
+
     const markInvalid = () => {
       if (columnValid) columnStat.invalid_records++;
       columnValid = false;
@@ -357,33 +358,32 @@ export const validateRow = (
     const displayValue = getCellValue(rawValue, dataType);
     //const strValue = String(displayValue).trim();
     const strValue = String(displayValue);
+    const strValueOriginal = rawValue;
     const normalizedValue = strValue;
- 
+
     if (strValue !== "") {
       columnStat.total_records++;
     }
-   
+
     //has_empty
 
     if (rule.is_required && strValue === "") {
       columnStat.empty_count++;
-      markInvalid()
+      markInvalid();
       if (debug == 1)
         columnStat.error_msg.push({
           row: rowNumber,
           column: columnName,
           error_type: "Empty Data",
-          error_description: `${columnName} is mandatory`,
+          error_description: `The ${columnName} field is required`,
         });
 
       errorBuffer.add([
         rowNumber,
         columnName,
         "Empty Data",
-        `${columnName} is mandatory`,
+        `The ${columnName} field is required`,
       ]);
-
-     
     }
 
     // ✅ datatype check FIRST
@@ -397,13 +397,13 @@ export const validateRow = (
     ) {
       datatype_validation_checked = 1;
       columnStat.datatype_error_count++;
-      markInvalid()
+      markInvalid();
 
       errorBuffer.add([
         rowNumber,
         columnName,
         "Datatype Error",
-        `${columnName} must be ${dataType}, but got string`,
+        `${columnName} must be a ${dataType}, but got string (${strValueOriginal ?? "Value"})`,
       ]);
 
       if (debug == 1)
@@ -411,7 +411,7 @@ export const validateRow = (
           row: rowNumber,
           column: columnName,
           error_type: "Datatype Error",
-          error_description: `${columnName} must be ${dataType}, but got string`,
+          error_description: `${columnName} must be a ${dataType}, but got string (${strValueOriginal ?? "Value"})`,
         });
     }
 
@@ -422,19 +422,19 @@ export const validateRow = (
 
       if (!rule.cellContainsRegex.test(value)) {
         columnStat.regex_pattern_error_count++;
-        markInvalid()
+        markInvalid();
         if (debug == 1)
           columnStat.error_msg.push({
             row: rowNumber,
             column: columnName,
             error_type: "Regex Pattern Error",
-            error_description: `${strValue} does not match required format ${columnStat.regex_pattern_error_count}`,
+            error_description: `${strValue ?? "Value"} does not match required format ${rule.cellContainsRegex}`,
           });
         errorBuffer.add([
           rowNumber,
           columnName,
           "Regex Pattern Error",
-          `${strValue} does not match required format`,
+          `${strValue ?? "Value"} does not match required format ${rule.cellContainsRegex}`,
         ]);
       }
     }
@@ -442,17 +442,12 @@ export const validateRow = (
     if (dataType != undefined) {
       let is_error = 0;
       let error_msg = "";
-      if (
-        dataType === "string" ||
-        dataType === "alphabetic" ||
-        dataType === "email"
-      ) {
+      if (dataType === "string" || dataType === "alphabetic") {
         const regexResult =
           dataType === "string"
             ? stringRegex.test(strValue)
-            : dataType === "alphabetic"
-              ? alphabeticsRegex.test(strValue)
-              : emailRegex.test(strValue);
+            : alphabeticsRegex.test(strValue);
+
         if (!regexResult) {
           is_error = 1;
           error_msg = `${strValue} does not match ${dataType} format`;
@@ -481,13 +476,13 @@ export const validateRow = (
       } else if (dataType === "date" && rule.dateRegex) {
         if (!rule.dateRegex.test(strValue)) {
           is_error = 1;
-          error_msg = `${strValue} does not match format ${rule.date_format}`;
+          error_msg = `${strValueOriginal ?? "value"} does not match format ${rule.date_format}`;
         }
       }
 
       if (is_error == 1) {
         columnStat.datatype_error_count++;
-        markInvalid()
+        markInvalid();
         errorBuffer.add([rowNumber, columnName, "Datatype Error", error_msg]);
 
         if (debug == 1)
@@ -508,45 +503,46 @@ export const validateRow = (
     ) {
       let is_error = 0;
       let error_msg = "";
+      const numValue = +strValue;
+
+      const isInvalidNumber = Number.isNaN(numValue);
 
       if (dataType === "float" || dataType === "integer") {
-        const numValue = +strValue;
-        // Variable length validation (numeric range)
-        if (rule.length_validation_type === "variable") {
+        if (isInvalidNumber) {
+          is_error = 1;
+          error_msg = `${strValueOriginal ?? "Value"}  must be between ${rule.min_length} and ${rule.max_length}`;
+        } else if (rule.length_validation_type === "variable") {
           if (rule.min_length !== null && numValue < rule.min_length) {
             is_error = 1;
-            error_msg = `${columnName} must be >= ${rule.min_length}`;
+            error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and ${rule.max_length}`;
           }
 
           if (rule.max_length !== null && numValue > rule.max_length) {
             is_error = 1;
-            error_msg = `${columnName} must be <= ${rule.max_length}`;
+            error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and ${rule.max_length}`;
           }
         } else if (rule.length_validation_type === "fixed") {
-          
-          
           if (rule.min_length !== null && strValue !== rule.min_length) {
             is_error = 1;
-            error_msg = `${columnName} must be exactly ${rule.min_length}`;
+            error_msg = `${strValueOriginal ?? "Value"} must be exactly ${rule.min_length}`;
           }
         }
       } else if (
         dataType === undefined ||
         dataType === "string" ||
-        dataType === "email" ||
         dataType === "boolean" ||
         dataType === "alphabetic"
       ) {
         const strLen = strValue.length;
 
         // VARIABLE LENGTH (min / max)
-        if (rule.length_validation_type === "variable") {          
-          if (rule.min_length !== null && strLen < rule.min_length) {            
+        if (rule.length_validation_type === "variable") {
+          if (rule.min_length !== null && strLen < rule.min_length) {
             is_error = 1;
-            error_msg = `${columnName} must be at least ${rule.min_length} characters`;
-          }else if (rule.max_length !== null && strLen > rule.max_length) {
-            is_error = 1;           
-            error_msg = `${columnName} must be <= ${rule.max_length} characters`;
+            error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and  ${rule.max_length} characters`;
+          } else if (rule.max_length !== null && strLen > rule.max_length) {
+            is_error = 1;
+            error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and  ${rule.max_length} characters`;
           }
         }
 
@@ -554,7 +550,7 @@ export const validateRow = (
         else if (rule.length_validation_type === "fixed") {
           if (rule.min_length !== null && strLen !== Number(rule.min_length)) {
             is_error = 1;
-            error_msg = `${columnName} must be exactly ${rule.min_length} characters`;
+            error_msg = `${strValueOriginal ?? "Value"} must be exactly ${rule.min_length} characters`;
           }
         }
       } else if (dataType === "date") {
@@ -600,7 +596,7 @@ export const validateRow = (
 
               if (inputDate.getTime() !== compareDate.getTime()) {
                 is_error = 1;
-                error_msg = `${strValue} must be exactly ${rule.min_length}`;
+                error_msg = `${strValueOriginal ?? "Value"} must be exactly ${rule.min_length}`;
               }
             }
           } else if (rule.length_validation_type === "variable") {
@@ -623,13 +619,13 @@ export const validateRow = (
               (maxDate && inputDate.getTime() > maxDate.getTime())
             ) {
               is_error = 1;
-              error_msg = `${strValue} must be between ${rule.min_length} and ${rule.max_length}`;
+              error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and ${rule.max_length}`;
             }
           }
         }
       }
       if (is_error == 1) {
-        markInvalid()
+        markInvalid();
         columnStat.length_validation_error_count++;
         errorBuffer.add([
           rowNumber,
@@ -690,21 +686,21 @@ export const validateRow = (
     }
 
     if (rule.fixed_header_set && !rule.fixed_header_set.has(strValue)) {
-      markInvalid()
+      markInvalid();
       columnStat.fixed_header_error_count++;
 
       errorBuffer.add([
         rowNumber,
         columnName,
         "Fixed Value Error",
-        `${strValue} not allowed`,
+        `Invalid fixed value: ${strValue}. Only ${rule.fixedHeaderMessage} is allowed`,
       ]);
       if (debug == 1)
         columnStat.error_msg.push({
           row: rowNumber,
           column: columnName,
           error_type: "Fixed Value Error",
-          error_description: `${strValue} is not valid fiexd value. only ${rule.fixedHeaderMessage} are allowed`,
+          error_description: `Invalid fixed value: ${strValue}. Only ${rule.fixedHeaderMessage} is allowed`,
         });
     }
 
@@ -714,20 +710,20 @@ export const validateRow = (
         normalizedValue.startsWith(prefix),
       )
     ) {
-      markInvalid()
+      markInvalid();
       columnStat.cell_start_with_error_count++;
       errorBuffer.add([
         rowNumber,
         columnName,
         "Start With Error",
-        `${strValue} must start with ${rule.cellStartWithMessage}`,
+        `Invalid start value: ${strValue}. It must start with ${rule.cellStartWithMessage}.`,
       ]);
       if (debug == 1)
         columnStat.error_msg.push({
           row: rowNumber,
           column: columnName,
           error_type: "Start With Error",
-          error_description: `${strValue} must start with ${rule.cellStartWithMessage}`,
+          error_description: `Invalid start value: ${strValue}. It must start with ${rule.cellStartWithMessage}.`,
         });
     }
 
@@ -738,21 +734,21 @@ export const validateRow = (
         normalizedValue.endsWith(suffix),
       )
     ) {
-      markInvalid()
+      markInvalid();
       columnStat.cell_end_with_error_count++;
 
       errorBuffer.add([
         rowNumber,
         columnName,
         "End With Error",
-        `${strValue} must end with ${rule.cellEndWithMessage}`,
+        `Invalid end value: ${strValue}. It must end with ${rule.cellEndWithMessage}`,
       ]);
       if (debug == 1)
         columnStat.error_msg.push({
           row: rowNumber,
           column: columnName,
           error_type: "End With Error",
-          error_description: `${strValue} must end with ${rule.cellEndWithMessage}`,
+          error_description: `Invalid end value: ${strValue}. It must end with ${rule.cellEndWithMessage}`,
         });
     }
     if (
@@ -761,21 +757,21 @@ export const validateRow = (
         normalizedValue.includes(word),
       )
     ) {
-      markInvalid()
+      markInvalid();
       columnStat.blocked_word_error_count++;
 
       errorBuffer.add([
         rowNumber,
         columnName,
         "Blocked Word",
-        `${strValue} contains blocked word`,
+        `Blocked word ${rule.blockwordsMessage} found in ${strValue}`,
       ]);
       if (debug == 1)
         columnStat.error_msg.push({
           row: rowNumber,
           column: columnName,
           error_type: "Blocked Word",
-          error_description: `${strValue} contains blocked word`,
+          error_description: `Blocked word ${rule.blockwordsMessage} found in ${strValue}`,
         });
     }
 

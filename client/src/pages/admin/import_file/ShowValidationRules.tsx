@@ -464,7 +464,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                   : "bg-gray-200 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600"
               }`}
                     >
-                      {item.rules.length}
+                      {
+                        item.rules.filter((r) => r.type !== "date_format")
+                          .length
+                      }
                     </span>
                   )}
                 </div>

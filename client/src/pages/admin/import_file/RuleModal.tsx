@@ -61,17 +61,17 @@ const RuleModal: React.FC<Props> = ({
         {/* CLOSE BUTTON */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-4 text-gray-400 hover:text-gray-600"
+          className="absolute text-gray-400 top-6 right-4 hover:text-gray-600"
         >
           <MdClear size={18} />
         </button>
 
         {/* HEADER */}
-        <div className="mb-6 border-b pb-3">
+        <div className="pb-3 mb-6 border-b">
           <h2 className="mb-4 text-xl font-semibold text-gray-800">
             {editingRule ? "Edit Rule" : "Add Rule"} for '{currentHeader}'
           </h2>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-gray-500">
             Configure validation rules for your selected column
           </p>
         </div>
@@ -400,11 +400,21 @@ const RuleModal: React.FC<Props> = ({
         )}
 
         {tempRule.type === "fixed_header" && (
-          <TagInputRule
-            label="Fixed value"
-            values={tempRule.fixed_header || []}
-            onChange={(val) => setTempRule({ ...tempRule, fixed_header: val })}
-          />
+          <div>
+            <label className="text-base text-gray-600">Fixed value</label>
+            <input
+              type="text"
+              value={tempRule.fixed_header || ""}
+              onChange={(e) =>
+                setTempRule({
+                  ...tempRule,
+                  fixed_header: e.target.value,
+                })
+              }
+              placeholder="Enter fixed value (e.g. India)"
+              className="w-full px-3 py-2 mt-1 text-base border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         )}
         {tempRule.type === "cell_start_with" && (
           <div>

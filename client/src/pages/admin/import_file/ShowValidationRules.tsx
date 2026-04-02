@@ -92,7 +92,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     data_redundant_value?: string;
     data_redundant_threshold?: string;
     cell_contains_value?: string;
-    fixed_header?: string[];
+    fixed_header?: string;
     not_match_found?: string[];
     cell_end_with?: string[];
     cell_start_with?: string;
@@ -372,7 +372,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
       case "fixed_header":
         return {
           type: "fixed_header",
-          fixed_header: rule.value as string[],
+          fixed_header: rule.value,
         };
 
       case "cell_start_with":
@@ -538,6 +538,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         "required",
                         "regex",
                         "cell_start_with",
+                        "fixed_header",
                         "data_redundant",
                       ].includes(rule.type) && (
                         <div className="flex items-center gap-2">
@@ -626,11 +627,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         </div>
                       )}
 
-                      {[
-                        "fixed_header",
-                        "cell_end_with",
-                        "not_match_found",
-                      ].includes(rule.type) && (
+                      {["cell_end_with", "not_match_found"].includes(
+                        rule.type,
+                      ) && (
                         <div className="flex items-center gap-2">
                           <span className="text-gray-500 ">
                             Blocked value:{" "}
@@ -753,24 +752,23 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
           onClick={() => setConfirmOpen(false)}
         >
           <div
-            className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6
-               transform transition-all duration-200 scale-100"
+            className="w-full max-w-sm p-6 transition-all duration-200 transform scale-100 bg-white shadow-xl rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setConfirmOpen(false)}
-              className="absolute top-6 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute text-gray-400 top-6 right-4 hover:text-gray-600"
             >
               <MdClear size={18} />
             </button>
             {/* Title */}
-            <div className=" pb-3">
+            <div className="pb-3 ">
               <h2 className="mb-4 text-xl font-semibold text-gray-800">
                 Delete Rule
               </h2>
 
               {/* Description */}
-              <p className="text-base text-gray-500 mt-2 leading-relaxed">
+              <p className="mt-2 text-base leading-relaxed text-gray-500">
                 Are you sure you want to delete this rule?
               </p>
 
@@ -778,16 +776,14 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
               <div className="flex justify-center gap-3 mt-6">
                 <button
                   onClick={() => setConfirmOpen(false)}
-                  className="px-4 py-2 text-base rounded-lg border border-gray-200
-                      text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 text-base text-gray-600 transition-colors border border-gray-200 rounded-lg hover:bg-gray-100"
                 >
                   Cancel
                 </button>
 
                 <button
                   onClick={confirmDelete}
-                  className="px-4 py-2 text-base rounded-lg bg-red-500 text-white
-                      hover:bg-red-600 transition-colors shadow-sm"
+                  className="px-4 py-2 text-base text-white transition-colors bg-red-500 rounded-lg shadow-sm hover:bg-red-600"
                 >
                   Delete
                 </button>

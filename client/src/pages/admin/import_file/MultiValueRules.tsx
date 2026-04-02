@@ -37,7 +37,7 @@ export default function MultiValueRules({
 
   const title =
     inputType === "fixed_header"
-      ? "Fixed Header Values"
+      ? "Fixed Value"
       : inputType === "cell_start_with"
         ? "Cell Start With Values"
         : inputType === "cell_end_with"
@@ -82,9 +82,9 @@ export default function MultiValueRules({
     setEditError("");
   };
   return (
-    <div className="border border-gray-300 rounded-xl p-3 sm:p-4 bg-transparent shadow-sm space-y-4 mt-3">
+    <div className="p-3 mt-3 space-y-4 bg-transparent border border-gray-300 shadow-sm rounded-xl sm:p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="text-sm font-semibold flex items-center gap-2  ">
+        <label className="flex items-center gap-2 text-sm font-semibold ">
           {title}
           <InfoTooltip
             id={`${inputType}-tooltip`}
@@ -128,7 +128,7 @@ export default function MultiValueRules({
               inputRef.current?.focus();
             }, 0);
           }}
-          className="p-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
+          className="p-2 text-white transition bg-blue-600 rounded-md hover:bg-blue-700"
         >
           <FaPlus className="w-4 h-4" />
         </button>
@@ -137,7 +137,7 @@ export default function MultiValueRules({
             type="button"
             title="Clear"
             onClick={() => cancelMultiValueRules(headerName, inputType)}
-            className="p-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+            className="p-2 text-gray-700 transition bg-gray-200 rounded-md hover:bg-gray-300"
           >
             <MdClear size={14} />
           </button>
@@ -145,7 +145,7 @@ export default function MultiValueRules({
       </div>
 
       {(errors as any)?.[headerName]?.[`${inputType}_input`] && (
-        <p className="text-red-500 text-xs">
+        <p className="text-xs text-red-500">
           {(errors as any)[headerName][`${inputType}_input`].message}
         </p>
       )}
@@ -155,11 +155,11 @@ export default function MultiValueRules({
         {fields.map((field, idx) => (
           <div
             key={field.id}
-            className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-3 p-3 mb-3 border border-gray-300 rounded-xl bg-white shadow-sm"
+            className="flex flex-wrap items-start justify-between gap-3 p-3 mb-3 bg-white border border-gray-300 shadow-sm sm:flex-nowrap sm:items-center rounded-xl"
           >
             {editIndex === idx ? (
               <div className="w-full">
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 border p-2 rounded-lg w-full">
+                <div className="flex flex-wrap items-center w-full gap-3 p-2 border rounded-lg sm:flex-nowrap">
                   <input
                     value={editValue}
                     onChange={(e) => {
@@ -172,7 +172,7 @@ export default function MultiValueRules({
                   <button
                     type="button"
                     onClick={updateValue}
-                    className=" rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+                    className="text-blue-600 transition rounded-lg  bg-blue-50 hover:bg-blue-100"
                   >
                     <FiSave size={18} />
                   </button>
@@ -183,26 +183,26 @@ export default function MultiValueRules({
                       setEditIndex(null);
                       setEditError("");
                     }}
-                    className=" rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition"
+                    className="text-gray-600 transition rounded-lg  bg-gray-50 hover:bg-gray-100"
                   >
                     <MdClear size={18}></MdClear>
                   </button>
                 </div>
 
                 {editError && (
-                  <p className="text-red-500 text-xs mt-1">{editError}</p>
+                  <p className="mt-1 text-xs text-red-500">{editError}</p>
                 )}
               </div>
             ) : (
               <>
-                <span className="flex-1 break-words text-sm">
+                <span className="flex-1 text-sm break-words">
                   {field.value}
                 </span>
 
                 <button
                   type="button"
                   onClick={() => startEdit(idx)}
-                  className=" rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition duration-150"
+                  className="text-blue-600 transition duration-150 rounded-lg  hover:bg-blue-50 hover:text-blue-700"
                 >
                   <FiEdit size={18} />
                 </button>
@@ -210,7 +210,7 @@ export default function MultiValueRules({
                 <button
                   type="button"
                   onClick={() => handleDelete(idx)}
-                  className=" rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition duration-150"
+                  className="text-blue-600 transition duration-150 rounded-lg  hover:bg-blue-50 hover:text-blue-700"
                 >
                   <FiTrash2 size={18} />
                 </button>

@@ -43,7 +43,7 @@ export const RULE_LABELS = {
   date_format: "Date Format",
   data_redundant: "Redundant Value",
   regex: "Regex",
-  fixed_header: "Fixed Values",
+  fixed_header: "Fixed Value",
   not_match_found: "Blocked value",
   cell_end_with: "Cell End With",
   cell_start_with: "Cell Start With",

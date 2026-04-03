@@ -8,11 +8,11 @@ import {
   FiLogOut,
   FiMenu,
 } from "react-icons/fi";
-import logo from "/path-to-your-logo.png"; // Update with your logo path
-import Header from "./Header"; // Update with your Header component path
-import Footer from "./Footer"; // Update with your Footer component path
-import Breadcrumb from "./Breadcrumb"; // Update with your Breadcrumb component path
+import logo from "../../assets/actowizLogo.svg";
+import Header from "../../layouts/admin/Header";
 
+import Footer from "../../layouts/admin/Footer";
+import Breadcrumb from "../../components/Breadcrumb";
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -34,7 +34,7 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-white">
       {/* Sidebar */}
       <aside
         className={`
@@ -52,7 +52,7 @@ const AdminLayout = () => {
         `}
       >
         {/* Logo */}
-        <div className="flex items-center h-20 px-4 bg-[#2A374D] border-b border-[#4A5A78]">
+        <div className="flex items-center h-20 px-4 bg-[#3F4D67] border-b border-[#4A5A78]">
           <div className="flex items-center gap-3">
             {/* Logo Icon */}
             <div className="flex items-center justify-center w-12 h-12 overflow-hidden shadow-lg bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl">
@@ -66,11 +66,11 @@ const AdminLayout = () => {
             {/* Text - with animation for collapsed state */}
             <div
               className={`
-                overflow-hidden transition-all duration-300
-                ${sidebarOpen || isMobile ? "max-w-48 opacity-100" : "max-w-0 opacity-0"}
-              `}
+    overflow-hidden transition-all duration-300
+    ${sidebarOpen || isMobile ? "max-w-48 opacity-100" : "max-w-0 opacity-0"}
+  `}
             >
-              <div className="flex flex-col leading-tight">
+              <div className="flex flex-col px-2 py-1 leading-tight rounded-lg">
                 <span className="text-base font-bold tracking-wide text-white">
                   Actowiz
                 </span>
@@ -83,28 +83,27 @@ const AdminLayout = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto group">
+        <nav className="flex-1 py-6 space-y-1 overflow-y-auto group">
           {/* Dashboard Link */}
           <NavLink
             to="/admin/dashboard"
             className={({ isActive }) =>
-              `flex items-center ${
+              `flex items-center w-full ${
                 sidebarOpen || isMobile
                   ? "justify-start px-3"
                   : "justify-center px-2"
-              } gap-3 py-2.5 rounded-xl transition-all duration-200 group relative
-              ${
-                isActive
-                  ? "bg-[#2A374D] text-white shadow-md"
-                  : "text-gray-300 hover:bg-[#2A374D]/50 hover:text-white"
-              }`
+              } gap-3 py-2.5 rounded-sm transition-all duration-200 group relative
+    ${
+      isActive
+        ? "bg-[#2A374D] text-white shadow-md"
+        : "text-gray-300 hover:bg-[#2A374D]/50 hover:text-white"
+    }`
             }
           >
             <FiHome size={20} className="flex-shrink-0" />
             {sidebarOpen || isMobile ? (
               <span className="text-sm font-medium">Dashboard</span>
             ) : (
-              /* Tooltip for collapsed state */
               <span className="absolute z-50 px-2 py-1 ml-2 text-xs text-white transition-opacity bg-gray-800 rounded-md opacity-0 pointer-events-none left-full group-hover:opacity-100 whitespace-nowrap">
                 Dashboard
               </span>
@@ -115,16 +114,16 @@ const AdminLayout = () => {
           <NavLink
             to="/admin/import_file"
             className={({ isActive }) =>
-              `flex items-center ${
+              `flex items-center w-full ${
                 sidebarOpen || isMobile
                   ? "justify-start px-3"
                   : "justify-center px-2"
               } gap-3 py-2.5 rounded-xl transition-all duration-200 group relative
-              ${
-                isActive
-                  ? "bg-[#2A374D] text-white shadow-md"
-                  : "text-gray-300 hover:bg-[#2A374D]/50 hover:text-white"
-              }`
+    ${
+      isActive
+        ? "bg-[#2A374D] text-white shadow-md"
+        : "text-gray-300 hover:bg-[#2A374D]/50 hover:text-white"
+    }`
             }
           >
             <FiUpload size={20} className="flex-shrink-0" />
@@ -138,78 +137,6 @@ const AdminLayout = () => {
           </NavLink>
 
           {/* User Management Menu */}
-          <div className="mt-4 pt-2 border-t border-[#4A5A78]">
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className={`
-                w-full flex items-center 
-                ${
-                  sidebarOpen || isMobile
-                    ? "justify-between px-3"
-                    : "justify-center px-2"
-                } 
-                py-2.5 rounded-xl transition-all duration-200 
-                text-gray-300 hover:bg-[#2A374D]/50 hover:text-white 
-                group relative
-              `}
-            >
-              <div className="flex items-center gap-3">
-                <FiUser size={20} className="flex-shrink-0" />
-                {(sidebarOpen || isMobile) && (
-                  <span className="text-sm font-medium">User Management</span>
-                )}
-                {!sidebarOpen && !isMobile && (
-                  <span className="absolute z-50 px-2 py-1 ml-2 text-xs text-white transition-opacity bg-gray-800 rounded-md opacity-0 pointer-events-none left-full group-hover:opacity-100 whitespace-nowrap">
-                    User Management
-                  </span>
-                )}
-              </div>
-              {(sidebarOpen || isMobile) && (
-                <FiChevronDown
-                  size={16}
-                  className={`transition-transform duration-200 ${
-                    userMenuOpen ? "rotate-180" : ""
-                  }`}
-                />
-              )}
-            </button>
-
-            {/* Submenu */}
-            {(sidebarOpen || isMobile) && userMenuOpen && (
-              <div className="mt-1 ml-8 space-y-1 overflow-hidden transition-all duration-300">
-                <NavLink
-                  to="/admin/user/list"
-                  className={({ isActive }) =>
-                    `block px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                      isActive
-                        ? "bg-[#2A374D] text-white"
-                        : "text-gray-300 hover:bg-[#2A374D]/50 hover:text-white"
-                    }`
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    User List
-                  </div>
-                </NavLink>
-                <NavLink
-                  to="/admin/user/add"
-                  className={({ isActive }) =>
-                    `block px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-                      isActive
-                        ? "bg-[#2A374D] text-white"
-                        : "text-gray-300 hover:bg-[#2A374D]/50 hover:text-white"
-                    }`
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    Add User
-                  </div>
-                </NavLink>
-              </div>
-            )}
-          </div>
 
           {/* Sidebar Footer - User Profile */}
           <div className="pt-4 mt-4 border-t border-[#4A5A78]">
@@ -220,36 +147,7 @@ const AdminLayout = () => {
                 py-2 rounded-xl transition-all duration-200
                 hover:bg-[#2A374D]/50 group relative
               `}
-            >
-              {/* Avatar */}
-              <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500">
-                <span className="text-xs font-bold text-white">A</span>
-              </div>
-
-              {/* User Info - Only show when sidebar is open */}
-              {(sidebarOpen || isMobile) && (
-                <>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      Admin User
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                      admin@actowiz.com
-                    </p>
-                  </div>
-                  <button className="p-1 text-gray-400 transition hover:text-white">
-                    <FiLogOut size={16} />
-                  </button>
-                </>
-              )}
-
-              {/* Tooltip for collapsed state */}
-              {!sidebarOpen && !isMobile && (
-                <span className="absolute z-50 px-2 py-1 ml-2 text-xs text-white transition-opacity bg-gray-800 rounded-md opacity-0 pointer-events-none left-full group-hover:opacity-100 whitespace-nowrap">
-                  Admin User
-                </span>
-              )}
-            </div>
+            ></div>
           </div>
         </nav>
       </aside>
@@ -263,7 +161,7 @@ const AdminLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 min-w-0 bg-gray-50">
+      <div className="flex flex-col flex-1 min-w-0 bg-gray-white">
         <Header />
 
         <div className="flex flex-col flex-1">

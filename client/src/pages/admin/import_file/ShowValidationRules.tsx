@@ -7,6 +7,10 @@ import { ArrowRight, CloudHail } from "lucide-react";
 import toast from "react-hot-toast";
 import { getRuleName, date_format_options, RULE_LABELS } from "./defaultValues";
 import { generateRulesJSON } from "./generateRulesJSON";
+const capitalizeFirst = (str) => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
 const defaultTempRule = {
   dependency_mode: "required",
   sub_headers: [],
@@ -709,10 +713,11 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                                     </span>
 
                                     {/* Mode */}
-                                    <span className={ruleListClass}>
-                                      {s.mode}
-                                    </span>
-
+                                    {s.mode == "required" && (
+                                      <span className={ruleListClass}>
+                                        {capitalizeFirst(s.mode)}
+                                      </span>
+                                    )}
                                     {/* Value (optional) */}
                                     {s.value && (
                                       <span className={ruleListClass}>
@@ -736,13 +741,13 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                           setTempRule(buildTempRule(rule));
                           setIsModalOpen(true);
                         }}
-                        className="p-2 text-sidebar transition-all duration-200 rounded-lg hover:text-sidebarSecondaryHover hover:bg-blue-50"
+                        className="p-2 transition-all duration-200 rounded-lg text-sidebar hover:text-sidebarSecondaryHover hover:bg-blue-50"
                       >
                         <FiEdit size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteRule(idx)}
-                        className="p-2 text-sidebar transition-all duration-200 rounded-lg hover:text-red-600 hover:bg-red-50"
+                        className="p-2 transition-all duration-200 rounded-lg text-sidebar hover:text-red-600 hover:bg-red-50"
                       >
                         <FiTrash2 size={16} />
                       </button>

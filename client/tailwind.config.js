@@ -16,4 +16,5 @@ export default {
   plugins: [],
 };
 /* bg-gradient-to-r from-[#3F4D67] to-[#424649]
+bg-gradient-to-r from-sidebarSecondary to-sidebarSecondaryHover
  */

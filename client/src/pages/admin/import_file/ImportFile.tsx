@@ -35,6 +35,13 @@ const ImportFile: React.FC = () => {
   const navigate = useNavigate();
   const [validating, setValidating] = useState(false);
   const [rulesData, setRulesData] = useState<Record<string, any>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [headers, setHeaders] = useState<HeaderType[]>([]);
+  const [fileName, setFileName] = useState<string>("");
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
+  const [requestData, setRequestData] = useState(null);
+  const [loading, setLoading] = useState(false);
   const {
     handleSubmit,
     reset,
@@ -51,20 +58,13 @@ const ImportFile: React.FC = () => {
 
   const handleReset = () => {
     setHeaders([]);
+    setUploadedFileName("");
     setRulesData({});
     setFile(null);
     setFileName("");
     setRequestData(null);
     reset(); // react-hook-form reset
   };
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [headers, setHeaders] = useState<HeaderType[]>([]);
-  const [fileName, setFileName] = useState<string>("");
-  const [file, setFile] = useState<File | null>(null);
-
-  const [requestData, setRequestData] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   const validateFile = (file: File) => {
     return allowedTypes.includes(file.type);
@@ -92,12 +92,14 @@ const ImportFile: React.FC = () => {
 
       reset();
       setHeaders(response.data.data);
+      setUploadedFileName(response.data.filePath);
 
       setRequestData(null);
     } catch (error: any) {
       reset();
       setHeaders([]);
       setRulesData({});
+      setUploadedFileName("");
       toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
@@ -111,7 +113,7 @@ const ImportFile: React.FC = () => {
   const handleFile = async (selectedFile: File) => {
     setHeaders([]);
     setRulesData({});
-
+    setUploadedFileName("");
     if (!validateFile(selectedFile)) {
       toast.error("Invalid file type. Only .xlsx, .csv, .json, .xls allowed");
       handleReset();
@@ -126,6 +128,7 @@ const ImportFile: React.FC = () => {
     } catch {
       setHeaders([]);
       setRulesData({});
+      setUploadedFileName("");
       toast.error("Failed to read file");
     }
 
@@ -137,18 +140,21 @@ const ImportFile: React.FC = () => {
   const hasRules = Object.keys(rulesData).length > 0;
   const handleRunValidation = async () => {
     try {
-      const formData = new FormData();
       if (!file) {
         toast.error("Please select file");
         return;
       }
       setValidating(true);
-
-      formData.append("file", file);
-
-      // attach rules JSON
-      formData.append("columnConfig", JSON.stringify(rulesData));
-
+      const updatedRulesData = Object.fromEntries(
+        Object.entries(rulesData).map(([key, value]) => {
+          const { name, ...rest } = value; // remove "name"
+          return [key, rest];
+        }),
+      );
+      const formData = {
+        columnConfig: JSON.stringify(updatedRulesData),
+        fileName: uploadedFileName,
+      };
       const response = await apiClient.post(`admin/api/qa_file`, formData, {
         withCredentials: true,
       });
@@ -174,7 +180,17 @@ const ImportFile: React.FC = () => {
   return (
     <div className="mt-6 space-y-6">
       {/* Title */}
-
+      <span className="px-3 py-1 text-sm font-medium text-white bg-[#3B82F6] rounded-md hover:bg-[#2563EB] transition-colors duration-200 cursor-pointer">
+        Label
+      </span>{" "}
+      {"   "}
+      <span className="px-3 py-1 text-sm font-medium text-white bg-[#4F46E5] rounded-md hover:bg-[#4338CA] transition-colors duration-200 cursor-pointer">
+        Label
+      </span>{" "}
+      {"   "}
+      <span className="px-3 py-1 text-sm font-medium text-white bg-[#5C6AC4] rounded-md hover:bg-[#4C51BF] transition-colors duration-200 cursor-pointer">
+        Label
+      </span>
       <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
         {/* Upload Box */}
         {headers.length === 0 ? (
@@ -183,13 +199,13 @@ const ImportFile: React.FC = () => {
               <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
                 Upload File
               </h1>
-              <p className="mt-2 text-base text-gray-500">
+              <p className="mt-2 text-lg text-gray-500">
                 Upload your file to configure validation rules and analyze data
                 quality
               </p>
             </div>
             <div
-              className="p-10 transition border-2 border-gray-300 border-dashed cursor-pointer rounded-xl bg-gray-50 hover:border-blue-400 hover:bg-blue-50/20"
+              className="p-10 transition border-2 border-gray-300 border-dashed cursor-pointer rounded-xl bg-gray-50 hover:border-sidebar hover:bg-sidebar/10"
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
@@ -201,11 +217,11 @@ const ImportFile: React.FC = () => {
               <div className="flex flex-col items-center text-gray-600">
                 <FiUpload className="text-3xl text-gray-400 sm:text-4xl" />
 
-                <p className="mt-2 font-semibold text-gray-700">
+                <p className="mt-2 text-2xl font-semibold text-gray-700">
                   Drag & drop file here
                 </p>
-                <p className="text-sm text-gray-400">or click to browse</p>
-                <p className="mt-3 text-xs text-gray-400">
+                <p className="text-lg text-gray-400">or click to browse</p>
+                <p className="mt-3 text-lg text-gray-400">
                   Supports .xlsx, .xls, .csv, .json
                 </p>
               </div>
@@ -225,18 +241,31 @@ const ImportFile: React.FC = () => {
 
             {/* Loader OUTSIDE */}
             {loading && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-4 p-8 bg-white shadow-2xl rounded-2xl">
-                  <div className="w-12 h-12 border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Processing your file...
-                  </p>
+              <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+                <div className="flex flex-col items-center gap-4 pointer-events-auto">
+                  {/* Animated ring with custom colors */}
+                  <div className="relative w-12 h-12">
+                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#3F4D67] border-r-[#424649] animate-spin"></div>
+                    <div
+                      className="absolute inset-0 rounded-full border-4 border-transparent border-b-[#3F4D67] border-l-[#424649] animate-spin animation-delay-150"
+                      style={{ animationDuration: "0.8s" }}
+                    ></div>
+                    <div className="absolute inset-2 rounded-full bg-gradient-to-r from-[#3F4D67] to-[#424649] animate-pulse"></div>
+                  </div>
+
+                  {/* Pulsing text */}
+                  <div className="relative">
+                    <p className="text-sm font-semibold bg-gradient-to-r from-[#3F4D67] to-[#424649] bg-clip-text text-transparent animate-pulse">
+                      Processing...
+                    </p>
+                    <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-[#3F4D67] to-[#424649] rounded-full animate-pulse"></div>
+                  </div>
                 </div>
               </div>
             )}
 
             {fileName && (
-              <p className="px-2 mt-3 text-base text-center text-blue-600 break-all">
+              <p className="px-2 mt-3 text-base text-center text-sidebar break-all">
                 Uploaded: {fileName}
               </p>
             )}
@@ -245,27 +274,27 @@ const ImportFile: React.FC = () => {
           <>
             <div className="relative p-6 transition-all duration-200 bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-lg">
               {/* Top Accent Line */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 rounded-t-2xl" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-sidebar rounded-t-2xl" />
 
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 {/* LEFT SIDE → File Info */}
                 <div className="flex items-center min-w-0 gap-4">
                   {/* Icon */}
-                  <div className="p-2.5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-                    <FaUpload className="text-blue-600" size={20} />
+                  <div className="p-2.5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                    <FaUpload className="text-sidebar" size={20} />
                   </div>
 
                   {/* File Details */}
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-500">Uploaded File</p>
+                    <p className="text-base text-gray-500">Uploaded File</p>
 
-                    <p className="font-semibold text-gray-900 truncate">
+                    <p className="font-semibold text-gray-900 truncate text-lg">
                       {fileName}
                     </p>
 
                     {/* Header Count */}
                     <div className="mt-1">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-full">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-base font-medium text-sidebarSecondary bg-blue-50 rounded-full">
                         <FiGrid className="text-xs" />
                         {headers.length} Headers
                       </span>
@@ -279,9 +308,9 @@ const ImportFile: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-200 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 active:scale-95"
+                    className="inline-flex items-center gap-2 px-6 py-3 text-lg font-medium text-sidebar transition-all duration-200 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 active:scale-95"
                   >
-                    <FiRefreshCw className="text-base" />
+                    <FiRefreshCw className="text-2xl" />
                     <span>Change File</span>
                   </button>
 
@@ -290,10 +319,10 @@ const ImportFile: React.FC = () => {
                     onClick={handleRunValidation}
                     type="button"
                     disabled={!hasRules || validating}
-                    className={`px-5 py-2 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2
+                    className={`px-5 py-2 text-lg font-medium rounded-lg transition-all duration-200 flex items-center gap-2
   ${
     hasRules && !validating
-      ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:shadow-lg hover:from-gray-800 hover:to-gray-700 active:scale-95"
+      ? "bg-sidebar text-white hover:shadow-lg hover:bg-sidebarHover active:scale-95"
       : "bg-gray-100 text-gray-400 cursor-not-allowed"
   }`}
                   >

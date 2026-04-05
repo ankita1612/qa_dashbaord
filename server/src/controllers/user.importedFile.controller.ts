@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, response } from "express";
 import path from "path";
 import fs from "fs";
 import ExcelJS from "exceljs";
@@ -18,6 +18,7 @@ import {
   getCellValue,
   prepareColumnRules,
 } from "../validations/user.importedFile.validations";
+import { FileRules } from "../models/fileRules.model";
 
 /**
  * Add/Upload Imported File
@@ -36,6 +37,28 @@ class ImportFileController {
 
     return `${file_name}_${mm}${dd}${yyyy}${hh}${mi}${ss}.${extension}`;
   };
+  saveRulesToDB = async (user_id: string, rules: any) => {
+    try {
+      const result = await FileRules.findOneAndUpdate(
+        { user_id },
+        { $setOnInsert: { user_id, rules } },
+        { new: true, upsert: true },
+      );
+
+      return {
+        success: true,
+        data: result,
+        message: "Inserted if not exists, otherwise ignored",
+      };
+    } catch (error: any) {
+      console.error("Error saving rules to DB:", error);
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
   addImportedFile = async (
     req: Request,
     res: Response,
@@ -65,23 +88,27 @@ class ImportFileController {
     errorHeaderRow.font = { bold: true };
     errorHeaderRow.commit();
     try {
-      if (!req.file) {
+      if (!req.body.fileName) {
         res.status(400).json({
           success: false,
-          message: "No file uploaded",
+          message: "No file provided",
         });
         return;
       }
+      filePath = path.resolve(req.body.fileName);
+      console.log("Resolved path:", filePath);
 
-      filePath = path.resolve(req.file.path);
       const ext = path.extname(filePath).toLowerCase();
       let columnConfig: Record<string, ColumnRule>;
-      try {
-        columnConfig = JSON.parse(req.body.columnConfig);
-      } catch {
-        throw new Error("Invalid columnConfig JSON");
+      if (!req.body.columnConfig) {
+        throw new Error("columnConfig is missing");
       }
 
+      if (typeof req.body.columnConfig === "string") {
+        columnConfig = JSON.parse(req.body.columnConfig);
+      } else {
+        columnConfig = req.body.columnConfig;
+      }
       let result: ParserResult;
       switch (ext) {
         case ".json":
@@ -100,6 +127,17 @@ class ImportFileController {
           throw new Error(
             "Unsupported file type. Only .xlsx, .json, .csv, .xls files are allowed",
           );
+      }
+
+      //save repsonse to db
+
+      const response = await this.saveRulesToDB(
+        req.user._id,
+        req.body.columnConfig,
+      );
+      let file_saved = true;
+      if (!response.success) {
+        file_saved = false;
       }
 
       // start storing in excel first sheet
@@ -249,18 +287,19 @@ class ImportFileController {
         result_file: publicUrl,
         data: result,
         errors_for_coloms: errors_for_coloms,
+        file_saved: file_saved,
       });
     } catch (error) {
       next(error);
     } finally {
       //Delete uploaded file after processing
       if (filePath) {
-        try {
-          await fs.promises.unlink(filePath);
-          console.log("Uploaded file deleted:", filePath);
-        } catch (err) {
-          console.error("Error deleting file:", err);
-        }
+        // try {
+        //   await fs.promises.unlink(filePath);
+        //   console.log("Uploaded file deleted:", filePath);
+        // } catch (err) {
+        //   console.error("Error deleting file:", err);
+        // }
       }
     }
   };
@@ -282,6 +321,7 @@ class ImportFileController {
       }
 
       filePath = path.resolve(req.file.path);
+
       const ext = path.extname(filePath).toLowerCase();
 
       let result: string[] = [];
@@ -309,19 +349,10 @@ class ImportFileController {
       res.status(200).json({
         success: true,
         data: result,
+        filePath: req.file.destination + "/" + req.file.filename,
       });
     } catch (error) {
       next(error);
-    } finally {
-      //Delete uploaded file after processing
-      if (filePath) {
-        try {
-          await fs.promises.unlink(filePath);
-          console.log("Uploaded file deleted:", filePath);
-        } catch (err) {
-          console.error("Error deleting file:", err);
-        }
-      }
     }
   };
   cleanExcelString = (value: any): string => {

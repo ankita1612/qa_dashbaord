@@ -1,6 +1,5 @@
-import AppliedRules from "./AppliedRule";
+import { GoDotFill } from "react-icons/go";
 import { useState, useMemo, useCallback } from "react";
-import { FiCheckCircle } from "react-icons/fi";
 import { XCircle } from "lucide-react";
 import SummaryCard from "./SummaryCard";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +26,7 @@ const formatErrorMsg = (count, label) => {
       return `${count} value${count > 1 ? "s" : ""} have incorrect data type`;
 
     case "fixed_header":
-      return `${count} value${count > 1 ? "s" : ""} did not match fixed value`;
+      return `${count} value${count > 1 ? "s" : ""} did not match allowed values`;
 
     case "Dependency":
       return `${count} dependency condition${count > 1 ? "s" : ""} failed`;
@@ -172,6 +171,134 @@ const formatValue = (value) => {
   if (value === false) return "No";
   return String(value);
 };
+// const buildRulesArray = (colRules, issueMap = {}) => {
+//   const arr = [];
+//   console.log("+++++++++++");
+//   console.log(issueMap);
+//   console.log("+++++++++++");
+//   if (!colRules) return arr;
+
+//   // ✅ Length
+//   if (colRules.length_validation_type) {
+//     let value = colRules.length_validation_type;
+
+//     if (colRules.min_length !== undefined && colRules.min_length !== "") {
+//       value += `  Min: ${colRules.min_length}`;
+//     }
+
+//     if (colRules.max_length !== undefined && colRules.max_length !== "") {
+//       value += `  Max: ${colRules.max_length}`;
+//     }
+
+//     arr.push({
+//       label: "Length Type",
+//       value,
+//       errorMsg: issueMap.length_validation_error_count,
+//     });
+//   }
+
+//   // ✅ Redundant
+//   if (colRules.data_redundant_value !== undefined) {
+//     let value = colRules.data_redundant_value;
+
+//     if (colRules.data_redundant_threshold !== undefined) {
+//       value += `  Threshold: ${colRules.data_redundant_threshold}`;
+//     }
+
+//     arr.push({
+//       label: "Redundant Value",
+//       value,
+//       errorMsg: issueMap.redundant_error_count,
+//     });
+//   }
+
+//   // ✅ Regex
+//   if (colRules.cell_contains) {
+//     let value = "";
+
+//     if (colRules.cell_contains && colRules.cell_contains_value) {
+//       value += ` ${colRules.cell_contains_value}`;
+//     }
+
+//     arr.push({
+//       label: "Regex",
+//       value,
+//       errorMsg: issueMap.regex_pattern_error_count,
+//     });
+//   }
+//   if (colRules.data_type) {
+//     let value = colRules.data_type;
+
+//     if (colRules.data_type == "date") {
+//       value += ` ${colRules.date_format}`;
+//     }
+
+//     arr.push({
+//       label: "Data Type",
+//       value,
+//       errorMsg: issueMap.datatype_error_count,
+//     });
+//   }
+//   // ✅ Dependency
+
+//   if (colRules.dependency && Object.keys(colRules.dependency).length > 0) {
+//     const value = Object.entries(colRules.dependency)
+//       .map(([k, v]) => (v === true ? `${k}: Required` : `${k}: ${v}`))
+//       .join(" • ");
+
+//     arr.push({ label: "Dependency", value });
+//   }
+
+//   // ✅ Remaining fields (generic)
+//   Object.entries(colRules).forEach(([key, value]) => {
+//     if (
+//       [
+//         "name",
+//         "date_format",
+//         "length_validation_type",
+//         "min_length",
+//         "max_length",
+//         "data_redundant_value",
+//         "data_redundant_threshold",
+//         "cell_contains",
+//         "cell_contains_value",
+//         "dependency",
+//       ].includes(key)
+//     ) {
+//       return;
+//     }
+
+//     arr.push({
+//       label: key || key,
+//       value:
+//         typeof value === "object"
+//           ? Array.isArray(value)
+//             ? value.join(", ")
+//             : Object.entries(value)
+//                 .map(([k, v]) => `${k}: ${v}`)
+//                 .join(", ")
+//           : value === true
+//             ? "Yes"
+//             : value === false
+//               ? "No"
+//               : String(value),
+//       errorMsg:
+//         key == "fixed_header"
+//           ? issueMap.fixed_header_error_count
+//           : key == "is_required"
+//             ? issueMap.datatype_error_count
+//             : key == "cell_start_with"
+//               ? issueMap.cell_start_with_error_count
+//               : key == "cell_end_with"
+//                 ? issueMap.cell_end_with_error_count
+//                 : key == "not_match_found"
+//                   ? issueMap.blocked_word_error_count
+//                   : "",
+//     });
+//   });
+
+//   return arr;
+// };
 const getFilteredColumns = (columnStats: any) => {
   return Object.entries(columnStats).filter(([_, stats]: any) =>
     Object.entries(stats).some(
@@ -246,7 +373,7 @@ const FIELD_LABELS = {
   cell_contains: "Regex Enabled",
   cell_contains_value: "Regex Pattern",
 
-  fixed_header: "Fixed Value",
+  fixed_header: "Fixed Values",
   cell_start_with: "Starts With",
   cell_end_with: "Ends With",
 
@@ -285,12 +412,14 @@ const ValidationResult = () => {
   );
   return (
     <div className="mt-6 space-y-6">
-      <h1 className="text-4xl font-semibold text-gray-800"></h1>
-      <p className="text-lg text-gray-500"></p>
-      <div className="flex items-center justify-end gap-4 mt-6">
+      <h1 className="text-4xl font-semibold text-gray-800">
+        Validation Result
+      </h1>
+      <p className="text-base text-gray-500"></p>
+      <div className="mt-6 flex items-center justify-end gap-4">
         {/* File Name */}
         <div
-          className="max-w-xs text-lg text-gray-600 truncate"
+          className="text-base text-gray-600 max-w-xs truncate"
           title={fileName}
         >
           <span className="text-gray-400">Current file:</span>{" "}
@@ -305,7 +434,7 @@ const ValidationResult = () => {
           onClick={() => navigate("/admin/import_file")}
           className="flex items-center gap-2 bg-black text-white py-2.5 px-5 rounded-xl font-medium hover:bg-gray-700 transition"
         >
-          <FaUpload className="text-lg" />
+          <FaUpload className="text-base" />
           Upload New File
         </button>
       </div>
@@ -322,7 +451,7 @@ const ValidationResult = () => {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2 text-white bg-blue-600 rounded-xl hover:bg-blue-700"
         >
-          <FiDownload className="text-lg" />
+          <FiDownload className="text-base" />
           Download Report
         </a>
       </div>
@@ -330,7 +459,7 @@ const ValidationResult = () => {
       <div className="bg-white border border-gray-200 shadow-sm rounded-2xl">
         {/* HEADER */}
         <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50 rounded-t-2xl">
-          <h2 className="text-xl font-semibold text-gray-700">
+          <h2 className="text-base font-semibold text-gray-700">
             Column Results ({filteredColumns.length})
           </h2>
         </div>
@@ -341,10 +470,10 @@ const ValidationResult = () => {
             // ✅ EMPTY STATE
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <CheckCircle className="mb-2 text-green-500" size={32} />
-              <p className="text-lg font-semibold text-green-600">
+              <p className="text-base font-semibold text-green-600">
                 All validations passed
               </p>
-              <p className="mt-1 text-lg text-gray-400">
+              <p className="mt-1 text-base text-gray-400">
                 No issues were found in your uploaded data.
               </p>
             </div>
@@ -360,40 +489,12 @@ const ValidationResult = () => {
                   ].includes(key),
               );
               const colRules = requestData?.[col] || {};
-
+              console.log("+++++++++++++++++++++++++++");
+              console.log(JSON.stringify(issues));
+              console.log("++++++++");
               const issueMap = Object.fromEntries(issues);
               const rulesArray = buildRulesArray(colRules, issueMap);
-              const dependencyMap = {};
 
-              Object.entries(requestData || {}).forEach(
-                ([parentCol, rules]: any) => {
-                  if (!rules.dependency) return;
-
-                  const entries = Object.entries(rules.dependency);
-
-                  for (let i = 0; i < entries.length - 1; i++) {
-                    const [currentKey, currentValue] = entries[i];
-                    const [nextKey, nextValue] = entries[i + 1];
-
-                    const currentCols = currentKey
-                      .split(",")
-                      .map((c) => c.trim());
-                    const nextCols = nextKey.split(",").map((c) => c.trim());
-
-                    nextCols.forEach((childCol) => {
-                      if (!dependencyMap[childCol]) {
-                        dependencyMap[childCol] = [];
-                      }
-
-                      dependencyMap[childCol].push({
-                        parentGroup: currentCols, // ✅ correct parent
-                        parentValue: currentValue,
-                        expected: nextValue,
-                      });
-                    });
-                  }
-                },
-              );
               return (
                 <div
                   key={col}
@@ -401,42 +502,33 @@ const ValidationResult = () => {
                 >
                   {/* ROW */}
 
-                  <div className="grid grid-cols-[200px_1fr_120px] items-center gap-4 px-5 py-4 border-b hover:bg-gray-50 transition">
+                  <div className="grid grid-cols-[200px_180px_1fr_120px] items-center gap-4 px-5 py-4 border-b hover:bg-gray-50 transition">
                     {/* 1️⃣ Column Name */}
                     <div className="font-medium text-gray-800 truncate">
                       {col}
                     </div>
 
                     {/* 2️⃣ Valid / Invalid */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* ✅ Valid */}
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-lg font-medium text-green-700 bg-green-50 border border-green-200 rounded-full">
-                        <CheckCircle size={14} />
-                        {stats.valid_records ?? 0} Valid
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1 px-3 py-1 text-base font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full whitespace-nowrap">
+                        <CheckCircle size={14} /> Valid (
+                        {stats.valid_records ?? 0})
                       </span>
 
-                      {/* ❌ Invalid */}
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-lg font-medium text-red-700 bg-red-50 border border-red-200 rounded-full">
+                      <span className="flex items-center gap-1 px-3 py-1 text-base font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full whitespace-nowrap">
                         <XCircle size={14} />
-                        {stats.invalid_records ?? 0} Invalid
-                      </span>
-
-                      {/* 📊 Rules */}
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-lg font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full">
-                        <FiCheckCircle size={14} />
-                        {issues.length} Rules Applied
+                        Invalid({stats.invalid_records ?? 0})
                       </span>
                     </div>
 
                     {/* 3️⃣ Issues (LIMITED VIEW) */}
-
-                    {/* <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {issues.length > 0 ? (
                         <>
                           {issues.map(([key, val]) => (
                             <span
                               key={key}
-                              className={`flex items-center gap-1 px-2.5 py-1 text-lg font-medium text-red-600 bg-red-50 border border-red-100 rounded-full ${getErrorStyle(key)}`}
+                              className={`flex items-center gap-1 px-2.5 py-1 text-base font-medium text-red-600 bg-red-50 border border-red-100 rounded-full ${getErrorStyle(key)}`}
                             >
                               <AlertCircle size={12} />
                               {key.replaceAll("_", " ")} ({val})
@@ -444,12 +536,12 @@ const ValidationResult = () => {
                           ))}
                         </>
                       ) : (
-                        <span className="flex items-center gap-1 text-lg text-green-600">
+                        <span className="flex items-center gap-1 text-base text-green-600">
                           <CheckCircle size={14} />
                           Clean
                         </span>
                       )}
-                    </div> */}
+                    </div>
 
                     {/* 4️⃣ Details Button */}
                     <div className="flex justify-end">
@@ -457,7 +549,7 @@ const ValidationResult = () => {
                         onClick={() =>
                           setExpandedColumn(expandedColumn === col ? null : col)
                         }
-                        className="flex items-center gap-1 px-3 py-1.5 text-lg font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                        className="flex items-center gap-1 px-3 py-1.5 text-base font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
                       >
                         {expandedColumn === col ? (
                           <>
@@ -477,24 +569,33 @@ const ValidationResult = () => {
                   {expandedColumn === col && (
                     <div className="px-5 pb-5 space-y-4 bg-gray-50">
                       <div className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-                        <p className="mb-3 text-lg font-semibold text-gray-700">
+                        <p className="mb-3 text-base font-semibold text-gray-700">
                           Applied Rules
                         </p>
 
-                        <AppliedRules
-                          col={col}
-                          colRules={colRules}
-                          issueMap={issueMap}
-                          errors_for_coloms={errors_for_coloms}
-                          dependencyMap={dependencyMap} // ✅ NEW
-                          formatErrorMsg={formatErrorMsg}
-                          FIELD_LABELS={FIELD_LABELS}
-                          columnStats={column_wise_stats[col]}
-                        />
+                        <div className="space-y-2">
+                          {rulesArray.map((rule, i) => (
+                            <div
+                              key={i}
+                              className="flex items-start justify-between px-3 py-2 border rounded-lg bg-gray-50"
+                            >
+                              <span className="text-sm text-gray-600">
+                                {rule.label}
+                              </span>
+                              <span className="text-sm font-medium text-gray-800 text-right max-w-[60%] break-words">
+                                {rule.value}
+                              </span>
+                              --
+                              <span className="text-sm font-medium text-gray-800 text-right max-w-[60%] break-words">
+                                {rule.errorMsg}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                       {/* 🔹 SUMMARY BLOCK */}
                       <div className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-                        <p className="mb-2 text-lg font-semibold text-gray-700">
+                        <p className="mb-2 text-base font-semibold text-gray-700">
                           Column Errors
                         </p>
 
@@ -503,13 +604,13 @@ const ValidationResult = () => {
                             errors_for_coloms[col].map((err, i) => (
                               <span
                                 key={i}
-                                className={`px-2.5 py-1 text-lg font-medium border rounded-full ${getErrorStyle(err)}`}
+                                className={`px-2.5 py-1 text-base font-medium border rounded-full ${getErrorStyle(err)}`}
                               >
                                 {err}
                               </span>
                             ))
                           ) : (
-                            <span className="text-lg text-green-600">
+                            <span className="text-base text-green-600">
                               No issues found
                             </span>
                           )}
@@ -521,7 +622,7 @@ const ValidationResult = () => {
                         <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
                           {/* Header */}
                           <div className="sticky top-0 z-10 px-4 py-3 bg-white border-b rounded-t-xl">
-                            <p className="text-lg font-semibold text-gray-700">
+                            <p className="text-base font-semibold text-gray-700">
                               Error Details
                             </p>
                           </div>
@@ -532,7 +633,7 @@ const ValidationResult = () => {
                               {stats.error_msg.map((err, index) => (
                                 <div
                                   key={index}
-                                  className="grid grid-cols-[40px_150px_1fr] items-center gap-3 px-4 py-2 text-lg hover:bg-gray-50"
+                                  className="grid grid-cols-[40px_150px_1fr] items-center gap-3 px-4 py-2 text-base hover:bg-gray-50"
                                 >
                                   {/* Row */}
                                   <span className="font-semibold text-gray-600">
@@ -556,7 +657,7 @@ const ValidationResult = () => {
                             </div>
                           ) : (
                             <div className="px-4 py-6 text-center">
-                              <p className="text-lg text-green-600">
+                              <p className="text-base text-green-600">
                                 No errors found
                               </p>
                             </div>

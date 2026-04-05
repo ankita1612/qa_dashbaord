@@ -1,12 +1,13 @@
 import { validateRule } from "./ruleValidator";
 import RuleModal from "./RuleModal";
 import { FiSearch, FiPlus, FiTrash2, FiEdit, FiFileText } from "react-icons/fi";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { MdClear } from "react-icons/md";
 import { ArrowRight, CloudHail } from "lucide-react";
 import toast from "react-hot-toast";
 import { getRuleName, date_format_options, RULE_LABELS } from "./defaultValues";
 import { generateRulesJSON } from "./generateRulesJSON";
+
 const capitalizeFirst = (str) => {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -312,7 +313,17 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
     text ? text.charAt(0).toUpperCase() + text.slice(1) : "-";
   const currentDataType =
     (appliedRuleDataType?.[0]?.value as string) || "string";
-
+  useEffect(() => {
+    if (headers.length > 0) {
+      setData(
+        headers.map((h, i) => ({
+          id: i,
+          name: h,
+          rules: [],
+        })),
+      );
+    }
+  }, [headers]);
   const buildTempRule = (rule: Rule): any => {
     switch (rule.type) {
       case "required":

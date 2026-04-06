@@ -187,7 +187,36 @@ export const getCellValue = (cell: any, dataType?: string): string => {
     return formatDate(jsDate);
   }
 
-  if (typeof cell === "object") {
+if (typeof cell === "object") {
+    console.log("~~~~~~~~~~~~");
+    console.log(cell);
+    console.log("~~~~~~~~~~~~");
+
+    // 🔥 1. ExcelJS evaluated value
+    if (cell.value !== undefined) {
+      if (typeof cell.value === "boolean") {
+        return cell.value ? "true" : "false";
+      }
+      return String(cell.value);
+    }
+
+    // 🔥 2. FORMULA (your case)
+    if (cell.formula) {
+      const formula = String(cell.formula).toLowerCase();
+
+      if (formula === "false()" || formula === "false") {
+        return "false";
+      }
+
+      if (formula === "true()" || formula === "true") {
+        return "true";
+      }
+
+      // fallback
+      return formula;
+    }
+
+
     if (cell.richText) {
       return cell.richText
         .map((t: any) => t.text)
@@ -474,16 +503,13 @@ console.log(dataTypes)
   // ✅ OR validation (any type should pass)
   const isValid = dataTypes.some((type) => {
     switch (type) {
-      case "string":
-        console.log("SSS")
+      case "string":        
         return stringRegex.test(strValue);
 
-      case "alphabetic":
-        console.log("AAA")
+      case "alphabetic":        
         return alphabeticsRegex.test(strValue);
 
-      case "boolean":
-        console.log("BBB")
+      case "boolean":        
         return validBooleanValues.has(strValue.toLowerCase());
 
       case "date":
@@ -492,7 +518,7 @@ console.log(dataTypes)
         return  dateTimeRegex.test(strValue);
         }
       case "integer":
-        console.log("III")
+        
         // Excel special case
         if (
           ["csv", "xls", "xlsx"].includes(fileType) &&
@@ -500,11 +526,11 @@ console.log(dataTypes)
         ) {
           return false;
         }
-        console.log(integerRegex +"===integer==="+strValue)
+        
         return integerRegex.test(strValue);
 
       case "float":
-        console.log("FFF")
+        
         if (
           ["csv", "xls", "xlsx"].includes(fileType) &&
           typeof rawValue !== "number"
@@ -994,10 +1020,10 @@ const displayValue = getCellValue(rawValue, primaryType);
     const strValue = String(displayValue);
     const strValueOriginal = rawValue;
 
-  //   console.log("+++++++++++")
-  // console.log(strValue)
-  // console.log(strValueOriginal)
-  // console.log("+++++++++++")
+    console.log("+++++++++++")
+  console.log(strValue)
+  console.log(strValueOriginal)
+  console.log("+++++++++++")
     const normalizedValue = strValue;
 
     if (strValue !== "") {

@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import ShowUploadedFile from "./ShowUploadedFile";
 import ShowValidationRules from "./ShowValidationRules";
 import apiClient from "../../../services/apiClient";
-
+import SavedRules from "./SavedRules";
 type LocationState = {
   headers: string[];
   filePath: string;
@@ -98,7 +98,15 @@ const ShowImportedData: React.FC = () => {
         hasRules={Object.keys(rulesData).length > 0}
         validating={validating}
       />
-
+      <SavedRules
+        hasRules={Object.keys(rulesData).length > 0}
+        fileName={fileName}
+        currentRules={rulesData}
+        onRuleSelect={(selectedRules) => {
+          setRulesData(selectedRules);
+          toast.success("Rules loaded successfully");
+        }}
+      />
       {/* 🔹 Validation Rules UI */}
       {<ShowValidationRules headers={headers} onRulesChange={setRulesData} />}
       {loading && (

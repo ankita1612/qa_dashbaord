@@ -1,4 +1,5 @@
-import AppliedRules from "./AppliedRule";
+import ColumnDetailRow from "./ColumnDetailRow";
+
 import { useState, useMemo, useCallback } from "react";
 import { FiCheckCircle } from "react-icons/fi";
 import { XCircle } from "lucide-react";
@@ -8,6 +9,7 @@ import { FaUpload } from "react-icons/fa";
 import { FiFileText, FiDownload } from "react-icons/fi";
 import { CheckCircle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from "react-router-dom";
+
 const formatErrorMsg = (count, label) => {
   if (!count || count === 0) {
     return "No validation errors found";
@@ -54,9 +56,7 @@ const errorKeyMap = {
 };
 const buildRulesArray = (colRules, issueMap = {}) => {
   const arr = [];
-  console.log("+++++++++++");
-  console.log(issueMap);
-  console.log("+++++++++++");
+
   if (!colRules) return arr;
 
   // ✅ Length
@@ -172,17 +172,19 @@ const formatValue = (value) => {
   if (value === false) return "No";
   return String(value);
 };
+const ignoreColumns = [
+  "total_records",
+  "valid_records",
+  "invalid_records",
+  "error_msg",
+  "unique_values",
+  "unique_records",
+  "invalid_row_numbers",
+  "error_rows",
+];
 const getFilteredColumns = (columnStats: any) => {
   return Object.entries(columnStats).filter(([_, stats]: any) =>
-    Object.entries(stats).some(
-      ([key, value]) =>
-        ![
-          "total_records",
-          "valid_records",
-          "invalid_records",
-          "error_msg",
-        ].includes(key),
-    ),
+    Object.entries(stats).some(([key, value]) => !ignoreColumns.includes(key)),
   );
 };
 type ColumnError = {
@@ -262,8 +264,7 @@ const ValidationResult = () => {
   const requestData = location.state?.requestData;
   const fileName = location.state?.fileName;
   // console.log(responseData);
-  console.log("==========");
-  console.log(requestData);
+
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
 
   if (!responseData) {
@@ -283,292 +284,181 @@ const ValidationResult = () => {
     () => getFilteredColumns(column_wise_stats),
     [column_wise_stats],
   );
+  const dependencyColumnSet = useMemo(() => {
+    const set = new Set();
+
+    Object.values(requestData || {}).forEach((rule: any) => {
+      if (!rule?.dependency) return;
+
+      const keys = Object.keys(rule.dependency);
+
+      // ❌ ignore first key (parent)
+      const childKeys = keys.slice(1);
+
+      childKeys.forEach((key) => {
+        key.split(",").forEach((col: string) => {
+          set.add(col.trim());
+        });
+      });
+    });
+
+    return set;
+  }, [requestData]);
   return (
-    <div className="mt-6 space-y-6">
-      <h1 className="text-4xl font-semibold text-gray-800"></h1>
-      <p className="text-lg text-gray-500"></p>
-      <div className="flex items-center justify-end gap-4 mt-6">
-        {/* File Name */}
-        <div
-          className="max-w-xs text-lg text-gray-600 truncate"
-          title={fileName}
-        >
-          <span className="text-gray-400">Current file:</span>{" "}
-          <span className="inline-flex items-center gap-1 font-medium text-gray-800">
-            <FiFileText className="text-gray-400" />
-            {fileName || "No file selected"}
-          </span>
-        </div>
-
-        {/* Upload Button */}
-        <button
-          onClick={() => navigate("/admin/import_file")}
-          className="flex items-center gap-2 bg-black text-white py-2.5 px-5 rounded-xl font-medium hover:bg-gray-700 transition"
-        >
-          <FaUpload className="text-lg" />
-          Upload New File
-        </button>
-      </div>
-      {/* 🔹 TOP SUMMARY */}
-      <div className="grid grid-cols-3 gap-4">
-        <SummaryCard title="Total Rows" value={total_rows} />
-        <SummaryCard title="Valid Rows" value={valid_rows} success />
-        <SummaryCard title="Invalid Rows" value={invalid_rows} error />
-      </div>
-      <div className="flex justify-end">
-        <a
-          href={result_file}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 text-white bg-blue-600 rounded-xl hover:bg-blue-700"
-        >
-          <FiDownload className="text-lg" />
-          Download Report
-        </a>
-      </div>
-      {/* 🔹 COLUMN LIST */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-2xl">
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50 rounded-t-2xl">
-          <h2 className="text-xl font-semibold text-gray-700">
-            Column Results ({filteredColumns.length})
-          </h2>
-        </div>
-
-        {/* BODY */}
-        <div className="divide-y">
-          {filteredColumns.length === 0 ? (
-            // ✅ EMPTY STATE
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <CheckCircle className="mb-2 text-green-500" size={32} />
-              <p className="text-lg font-semibold text-green-600">
-                All validations passed
-              </p>
-              <p className="mt-1 text-lg text-gray-400">
-                No issues were found in your uploaded data.
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="mx-auto ">
+        <div className="mb-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="mb-2 text-4xl font-bold text-transparent md:text-5xl bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text">
+                Validation Results
+              </h1>
+              <p className="flex items-center gap-2 text-slate-500">
+                <FiCheckCircle className="text-green-500" />
+                Data quality report for your uploaded file
               </p>
             </div>
-          ) : (
-            filteredColumns.map(([col, stats]: any) => {
-              const issues = Object.entries(stats).filter(
-                ([key, val]) =>
-                  ![
-                    "total_records",
-                    "valid_records",
-                    "invalid_records",
-                    "error_msg",
-                  ].includes(key),
-              );
-              const colRules = requestData?.[col] || {};
 
-              const issueMap = Object.fromEntries(issues);
-              const rulesArray = buildRulesArray(colRules, issueMap);
-              const dependencyMap = {};
-
-              Object.entries(requestData || {}).forEach(
-                ([parentCol, rules]: any) => {
-                  if (!rules.dependency) return;
-
-                  const entries = Object.entries(rules.dependency);
-
-                  for (let i = 0; i < entries.length - 1; i++) {
-                    const [currentKey, currentValue] = entries[i];
-                    const [nextKey, nextValue] = entries[i + 1];
-
-                    const currentCols = currentKey
-                      .split(",")
-                      .map((c) => c.trim());
-                    const nextCols = nextKey.split(",").map((c) => c.trim());
-
-                    nextCols.forEach((childCol) => {
-                      if (!dependencyMap[childCol]) {
-                        dependencyMap[childCol] = [];
-                      }
-
-                      dependencyMap[childCol].push({
-                        parentGroup: currentCols, // ✅ correct parent
-                        parentValue: currentValue,
-                        expected: nextValue,
-                      });
-                    });
-                  }
-                },
-              );
-              return (
-                <div
-                  key={col}
-                  className="transition-all duration-200 hover:bg-gray-50"
-                >
-                  {/* ROW */}
-
-                  <div className="grid grid-cols-[200px_1fr_120px] items-center gap-4 px-5 py-4 border-b hover:bg-gray-50 transition">
-                    {/* 1️⃣ Column Name */}
-                    <div className="font-medium text-gray-800 truncate">
-                      {col}
-                    </div>
-
-                    {/* 2️⃣ Valid / Invalid */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* ✅ Valid */}
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-lg font-medium text-green-700 bg-green-50 border border-green-200 rounded-full">
-                        <CheckCircle size={14} />
-                        {stats.valid_records ?? 0} Valid
-                      </span>
-
-                      {/* ❌ Invalid */}
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-lg font-medium text-red-700 bg-red-50 border border-red-200 rounded-full">
-                        <XCircle size={14} />
-                        {stats.invalid_records ?? 0} Invalid
-                      </span>
-
-                      {/* 📊 Rules */}
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-lg font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full">
-                        <FiCheckCircle size={14} />
-                        {issues.length} Rules Applied
-                      </span>
-                    </div>
-
-                    {/* 3️⃣ Issues (LIMITED VIEW) */}
-
-                    {/* <div className="flex flex-wrap gap-2">
-                      {issues.length > 0 ? (
-                        <>
-                          {issues.map(([key, val]) => (
-                            <span
-                              key={key}
-                              className={`flex items-center gap-1 px-2.5 py-1 text-lg font-medium text-red-600 bg-red-50 border border-red-100 rounded-full ${getErrorStyle(key)}`}
-                            >
-                              <AlertCircle size={12} />
-                              {key.replaceAll("_", " ")} ({val})
-                            </span>
-                          ))}
-                        </>
-                      ) : (
-                        <span className="flex items-center gap-1 text-lg text-green-600">
-                          <CheckCircle size={14} />
-                          Clean
-                        </span>
-                      )}
-                    </div> */}
-
-                    {/* 4️⃣ Details Button */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() =>
-                          setExpandedColumn(expandedColumn === col ? null : col)
-                        }
-                        className="flex items-center gap-1 px-3 py-1.5 text-lg font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-                      >
-                        {expandedColumn === col ? (
-                          <>
-                            Hide <ChevronUp size={16} />
-                          </>
-                        ) : (
-                          <>
-                            Details <ChevronDown size={16} />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* EXPAND */}
-
-                  {expandedColumn === col && (
-                    <div className="px-5 pb-5 space-y-4 bg-gray-50">
-                      <div className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-                        <p className="mb-3 text-lg font-semibold text-gray-700">
-                          Applied Rules
-                        </p>
-
-                        <AppliedRules
-                          col={col}
-                          colRules={colRules}
-                          issueMap={issueMap}
-                          errors_for_coloms={errors_for_coloms}
-                          dependencyMap={dependencyMap} // ✅ NEW
-                          formatErrorMsg={formatErrorMsg}
-                          FIELD_LABELS={FIELD_LABELS}
-                          columnStats={column_wise_stats[col]}
-                        />
-                      </div>
-                      {/* 🔹 SUMMARY BLOCK */}
-                      <div className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-                        <p className="mb-2 text-lg font-semibold text-gray-700">
-                          Column Errors
-                        </p>
-
-                        <div className="flex flex-wrap gap-2">
-                          {errors_for_coloms?.[col]?.length > 0 ? (
-                            errors_for_coloms[col].map((err, i) => (
-                              <span
-                                key={i}
-                                className={`px-2.5 py-1 text-lg font-medium border rounded-full ${getErrorStyle(err)}`}
-                              >
-                                {err}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-lg text-green-600">
-                              No issues found
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* 🔹 ERROR DETAILS */}
-                      {stats.error_msg && stats.error_msg.length > 0 && (
-                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                          {/* Header */}
-                          <div className="sticky top-0 z-10 px-4 py-3 bg-white border-b rounded-t-xl">
-                            <p className="text-lg font-semibold text-gray-700">
-                              Error Details
-                            </p>
-                          </div>
-
-                          {/* Content */}
-                          {stats.error_msg && stats.error_msg.length > 0 ? (
-                            <div className="max-h-[320px] overflow-y-auto divide-y">
-                              {stats.error_msg.map((err, index) => (
-                                <div
-                                  key={index}
-                                  className="grid grid-cols-[40px_150px_1fr] items-center gap-3 px-4 py-2 text-lg hover:bg-gray-50"
-                                >
-                                  {/* Row */}
-                                  <span className="font-semibold text-gray-600">
-                                    #{err.row}
-                                  </span>
-
-                                  {/* Type Badge */}
-                                  <span className="px-2 py-0.5 text-[11px] font-medium text-red-600 bg-red-100 rounded w-fit">
-                                    {err.error_type}
-                                  </span>
-
-                                  {/* Description */}
-                                  <span
-                                    className="text-gray-700 truncate"
-                                    title={err.error_description}
-                                  >
-                                    {err.error_description}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="px-4 py-6 text-center">
-                              <p className="text-lg text-green-600">
-                                No errors found
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+            {/* File info badge - make it more visual */}
+            <div className="flex items-center gap-3">
+              <div className="px-4 py-2 border rounded-full shadow-sm bg-white/80 backdrop-blur-sm border-slate-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-base text-slate-600">
+                    {fileName || "No file selected"}
+                  </span>
                 </div>
-              );
-            })
-          )}
+              </div>
+
+              <button
+                onClick={() => navigate("/admin/import_file")}
+                className="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-slate-200 rounded-full hover:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <FaUpload className="transition-colors text-slate-500 group-hover:text-blue-500" />
+                <span className="font-medium text-slate-700 group-hover:text-blue-600">
+                  Upload New
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* 🔹 TOP SUMMARY */}
+        <div className="mt-8">
+          <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
+            <SummaryCard title="Total Records" value={total_rows} />
+            <SummaryCard title="Valid Records" value={valid_rows} success />
+            <SummaryCard title="Invalid Records" value={invalid_rows} error />
+          </div>
+        </div>
+        <div className="flex justify-end mb-6">
+          <a
+            href={result_file}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative inline-flex items-center gap-3 px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 shadow-lg group bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:shadow-xl"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-sidebarSecondary to-sidebarSecondaryHover"></div>
+            <FiDownload className="relative z-10 text-lg transition-transform group-hover:scale-110" />
+            <span className="relative z-10">Download Full Report</span>
+          </a>
+        </div>
+        {/* 🔹 COLUMN LIST */}
+        <div className="overflow-hidden bg-white border border-gray-100 shadow-lg rounded-2xl">
+          <div className="px-6 py-5 border-b bg-gradient-to-r from-slate-50 to-white border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="flex items-center gap-3 text-2xl font-bold text-slate-800">
+                  <div className="w-1.5 h-7 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  Column Analysis
+                </h2>
+                <p className="mt-1 text-base text-slate-500">
+                  Detailed validation results for each column
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 text-base font-medium text-blue-700 rounded-full bg-blue-50">
+                  {filteredColumns.length} columns analyzed
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BODY */}
+          {/* Grid Header */}
+          <div className="overflow-x-auto">
+            <table className="min-w-[800px] w-full border-collapse">
+              <thead className="border-b-2 bg-gradient-to-r from-slate-100 to-slate-50 border-slate-200">
+                <tr>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[5%]">
+                    ID
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[15%]">
+                    Headers
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[6%]">
+                    Total
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                    QC Pass
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                    QC Fail
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[6%]">
+                    Blank Rows
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[15%]">
+                    Reasons
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                    Unique %
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                    Status
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                    QC Fail %
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-[13%]">
+                    No. of Row ID
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredColumns.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="px-4 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="p-4 mb-4 rounded-full bg-green-50">
+                          <CheckCircle className="text-green-500" size={48} />
+                        </div>
+                        <p className="mb-2 text-xl font-bold text-green-600">
+                          🎉 All validations passed!
+                        </p>
+                        <p className="text-gray-500">
+                          No issues were found in your uploaded data. Your file
+                          looks great!
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredColumns.map(([col, stats]: any, index: number) => (
+                    <ColumnDetailRow
+                      key={col}
+                      col={col}
+                      stats={stats}
+                      index={index}
+                      total_rows={total_rows}
+                      colRules={requestData?.[col] || {}}
+                      dependencyColumnSet={dependencyColumnSet}
+                      // ... other props
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

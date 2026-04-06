@@ -60,18 +60,33 @@ export const parseXlsFile = async (
 
     columnStats[header] = {
       total_records: 0,
+      unique_records: 0,
       valid_records: 0,
       invalid_records: 0,
       redundant_value: 0,
       data_empty_count: 0,
       datatype_error_count: 0,
       fixed_header_error_count: 0,
-      // date_format_error_count: 0,
+       date_format_error_count: 0,
       cell_start_with_error_count: 0,
       cell_end_with_error_count: 0,
       data_length_error_count: 0,
       blocked_word_error_count: 0,
+      unique_values: new Set(),
       error_msg: [],
+      error_rows: {
+        empty: [],
+        datatype: [],
+        regex: [],
+        redundant: [],
+        fixed_header: [],
+        start_with: [],
+        end_with: [],
+        length: [],
+        blocked: [],
+        dependency: [],
+      },
+      invalid_row_numbers: [],
     };
   });
 

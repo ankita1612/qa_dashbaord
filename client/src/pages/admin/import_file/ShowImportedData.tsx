@@ -24,6 +24,7 @@ const ShowImportedData: React.FC = () => {
 
   const [rulesData, setRulesData] = useState<Record<string, any>>({});
   const [validating, setValidating] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // ✅ Handle refresh / direct access
   useEffect(() => {
@@ -49,6 +50,7 @@ const ShowImportedData: React.FC = () => {
       setValidating(true);
 
       // remove unnecessary "name" field
+
       const cleanedRules = Object.fromEntries(
         Object.entries(rulesData).map(([key, value]: any) => {
           const { name, ...rest } = value;
@@ -60,7 +62,7 @@ const ShowImportedData: React.FC = () => {
         columnConfig: JSON.stringify(cleanedRules),
         fileName: filePath,
       };
-
+      setLoading(true);
       const response = await apiClient.post(`admin/api/qa_file`, payload, {
         withCredentials: true,
       });
@@ -71,7 +73,7 @@ const ShowImportedData: React.FC = () => {
       navigate("/admin/import_file/validation_result", {
         state: {
           responseData: response.data,
-          requestData: rulesData,
+          requestData: cleanedRules,
           fileName,
         },
       });
@@ -81,6 +83,7 @@ const ShowImportedData: React.FC = () => {
       toast.error(msg);
     } finally {
       setValidating(false);
+      setLoading(false);
     }
   };
 
@@ -98,6 +101,29 @@ const ShowImportedData: React.FC = () => {
 
       {/* 🔹 Validation Rules UI */}
       {<ShowValidationRules headers={headers} onRulesChange={setRulesData} />}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 pointer-events-auto">
+            {/* Animated ring with custom colors */}
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#3F4D67] border-r-[#424649] animate-spin"></div>
+              <div
+                className="absolute inset-0 rounded-full border-4 border-transparent border-b-[#3F4D67] border-l-[#424649] animate-spin animation-delay-150"
+                style={{ animationDuration: "0.8s" }}
+              ></div>
+              <div className="absolute inset-2 rounded-full bg-gradient-to-r from-[#3F4D67] to-[#424649] animate-pulse"></div>
+            </div>
+
+            {/* Pulsing text */}
+            <div className="relative">
+              <p className="text-sm font-semibold bg-gradient-to-r from-[#3F4D67] to-[#424649] bg-clip-text text-transparent animate-pulse">
+                Processing...
+              </p>
+              <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-[#3F4D67] to-[#424649] rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -20,9 +20,11 @@ export default interface IImportedFile {
   total_records: number;
   valid_records: number;
   invalid_records: number;
+  unique_records: number;
   duplicate_count: number;
   data_empty_count: number;
   datatype_error_count: number;
+  date_formate_error_count: number;
   error_msg: IErrorDetail[];
   rules: IRuleDetail[];
   createdAt: Date;
@@ -92,16 +94,31 @@ export interface ColumnStats {
   total_records: number;
   valid_records: number;
   invalid_records: number;
+  unique_records: number;
   empty_count: number;
   datatype_error_count: number;
   regex_pattern_error_count: number;
   redundant_error_count: number;
   fixed_header_error_count: number;
-  //date_format_error_count: number;
+  date_format_error_count: number;
   cell_start_with_error_count: number;
   cell_end_with_error_count: number;
   length_validation_error_count: number;
   blocked_word_error_count: number;
   dependancy_error_count: number;
   error_msg: string[];
+  unique_values: Set<string>;
+  invalid_row_numbers: number[];
+  error_rows: {
+    empty: number[];
+    datatype: number[];
+    regex: number[];
+    redundant: number[];
+    fixed_header: number[];
+    start_with: number[];
+    end_with: number[];
+    length: number[];
+    blocked: number[];
+    dependency: number[];
+  };
 }

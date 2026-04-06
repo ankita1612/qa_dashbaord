@@ -1,8 +1,10 @@
 export const validateRule = (tempRule, current) => {
   if (!tempRule.type) return "Please select a rule";
 
-  if (tempRule.type === "data_type" && !tempRule.data_type) {
-    return "Please select data type";
+
+
+  if (tempRule.type === "data_type" && (!tempRule.data_type || tempRule.data_type.length === 0)) {
+    return "Please add at least one data type";
   }
 
   if (tempRule.type === "data_length") {
@@ -10,16 +12,16 @@ export const validateRule = (tempRule, current) => {
       (rule) => rule.type === "data_type",
     );
 
-    const dataType = current?.tempDataType || dataTypeRule?.value || "string";
-
+    const dataTypes = current?.tempDataType || dataTypeRule?.value || ["string"];
+const isDateType = dataTypes.includes("date");
     if (tempRule.length_mode === "fixed") {
       if (!tempRule.fixed && tempRule.fixed !== 0) {
-        return dataType === "date"
+        return isDateType
           ? "Please enter fixed date"
           : "Please enter fixed value. Fixed value should be >= 0";
       }
 
-      if (dataType === "date") {
+      if (dataTypes.includes("date")) {
         const fixedDate = new Date(tempRule.fixed);
 
         if (isNaN(fixedDate.getTime())) {
@@ -38,7 +40,7 @@ export const validateRule = (tempRule, current) => {
         }
       }
     } else if (tempRule.length_mode === "variable") {
-      if (dataType === "date") {
+      if (isDateType) {
         const minDate = new Date(tempRule.min);
         const maxDate = new Date(tempRule.max);
 
@@ -92,20 +94,20 @@ export const validateRule = (tempRule, current) => {
     return "Please select date format";
   }
   ///
-  if (tempRule.type === "data_type" && tempRule.date_format === "custom") {
-    // ✅ CUSTOM VALIDATION
+  // if (tempRule.type === "data_type" && tempRule.date_format === "custom") {
+  //   // ✅ CUSTOM VALIDATION
 
-    if (!tempRule.custom_date_format) {
-      return "Please enter custom date format";
-    }
+  //   if (!tempRule.custom_date_format) {
+  //     return "Please enter custom date format";
+  //   }
 
-    // basic format validation (production safe)
-    const validPattern = /^[YMDHhms:\-/\sA]+$/;
+  //   // basic format validation (production safe)
+  //   const validPattern = /^[YMDHhms:\-/\sA]+$/;
 
-    if (!validPattern.test(tempRule.custom_date_format)) {
-      return "Invalid custom date format";
-    }
-  }
+  //   if (!validPattern.test(tempRule.custom_date_format)) {
+  //     return "Invalid custom date format";
+  //   }
+  // }
   ///
   if (tempRule.type === "data_redundant") {
     if (!tempRule.data_redundant_value) {
@@ -115,18 +117,16 @@ export const validateRule = (tempRule, current) => {
     if (!tempRule.data_redundant_threshold) {
       return "Please enter threshold. Threshold value should be >= 0";
     }
-    if (tempRule.data_redundant_threshol < 0) {
+    if (tempRule.data_redundant_threshold < 0) {
       return "Threshold value must be >= 0";
     }
   }
 
   // ✅ Regex Validation
-  if (tempRule.type === "regex") {
-    if (tempRule.type === "regex") {
-      if (!tempRule.cell_contains_value) {
-        return "Please enter regex value";
-      }
-    }
+if (tempRule.type === "regex") {
+    if (!tempRule.cell_contains_value) {
+      return "Please enter regex value";
+    }  
     try {
       new RegExp(tempRule.cell_contains_value);
     } catch {

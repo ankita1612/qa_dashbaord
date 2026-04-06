@@ -186,18 +186,6 @@ const ImportFile: React.FC = () => {
   };
   return (
     <div className="mt-6 space-y-6">
-      {/* Title */}
-      <span className="px-3 py-1 text-sm font-medium text-white bg-[#3B82F6] rounded-md hover:bg-[#2563EB] transition-colors duration-200 cursor-pointer">
-        Label
-      </span>{" "}
-      {"   "}
-      <span className="px-3 py-1 text-sm font-medium text-white bg-[#4F46E5] rounded-md hover:bg-[#4338CA] transition-colors duration-200 cursor-pointer">
-        Label
-      </span>{" "}
-      {"   "}
-      <span className="px-3 py-1 text-sm font-medium text-white bg-[#5C6AC4] rounded-md hover:bg-[#4C51BF] transition-colors duration-200 cursor-pointer">
-        Label
-      </span>
       <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
         {/* Upload Box */}
         {headers.length === 0 ? (
@@ -238,6 +226,7 @@ const ImportFile: React.FC = () => {
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv,.json"
+                disabled={loading}
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -248,7 +237,7 @@ const ImportFile: React.FC = () => {
 
             {/* Loader OUTSIDE */}
             {loading && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-4 pointer-events-auto">
                   {/* Animated ring with custom colors */}
                   <div className="relative w-12 h-12">

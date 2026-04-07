@@ -620,7 +620,9 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
                         <span className="text-sidebar">Data Type</span>
 
                         <span className={ruleListClass}>
-                          {(rule.value as string[]).join(", ")}
+                          {(rule.value as string[])
+                            .map((v) => v.charAt(0).toUpperCase() + v.slice(1))
+                            .join(", ")}
                         </span>
                       </div>
                     )}
@@ -787,7 +789,7 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
           onClick={() => setConfirmOpen(false)}
         >
           <div
-            className="relative w-full max-w-md p-6 transition-all duration-200 transform scale-100 bg-white shadow-2xl rounded-2xl"
+            className="w-full max-w-2xl p-6 bg-white rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -802,10 +804,10 @@ const ShowValidationRules: React.FC<Props> = ({ headers, onRulesChange }) => {
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
                 <FiTrash2 className="text-2xl text-red-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Delete Rule
-              </h2>
-              <p className="mt-2 text-base text-gray-500">
+              <h1 className="text-3xl font-semibold text-gray-800">
+                Rule Delete
+              </h1>
+              <p className="mt-2 text-lg text-gray-500">
                 Are you sure you want to delete this rule? This action cannot be
                 undone.
               </p>

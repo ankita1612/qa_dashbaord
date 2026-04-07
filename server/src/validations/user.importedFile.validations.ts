@@ -719,15 +719,15 @@ const dataTypes = Array.isArray(dataType)
     if (rule.length_validation_type === "variable") {
       if (rule.min_length !== null && strLen < rule.min_length) {
         is_error = 1;
-        error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and  ${rule.max_length} characters`;
+        error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and ${rule.max_length} in length`;
       } else if (rule.max_length !== null && strLen > rule.max_length) {
         is_error = 1;
-        error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and  ${rule.max_length} characters`;
+        error_msg = `${strValueOriginal ?? "Value"} must be between ${rule.min_length} and  ${rule.max_length} length`;
       }
     } else if (rule.length_validation_type === "fixed") {
       if (rule.min_length !== null && strLen !== Number(rule.min_length)) {
         is_error = 1;
-        error_msg = `${strValueOriginal ?? "Value"} must be exactly ${rule.min_length} characters`;
+        error_msg = `${strValueOriginal ?? "Value"} must be exactly ${rule.min_length} length`;
       }
     }
   } else if (dataTypes.includes("date")) {

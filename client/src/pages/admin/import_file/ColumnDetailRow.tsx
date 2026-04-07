@@ -1,9 +1,17 @@
 // ColumnDetailRow.jsx
-import React from "react";
-import { CheckCircle, XCircle, ChevronUp, ChevronDown } from "lucide-react";
-import { FiCheckCircle } from "react-icons/fi";
 import { FileDown } from "lucide-react";
-
+const RULE_LABELS: Record<string, string> = {
+  empty: "Empty data",
+  datatype: "Data type Error",
+  regex: "Regex pattern mismatch",
+  redundant: "Redundant data",
+  fixed_header: "Fixed data",
+  start_with: "Start with data",
+  end_with: "End with",
+  length: "Data Length",
+  blocked: "Blocked value",
+  dependency: "Dependency data",
+};
 const buildErrorSummary = (columnName, errorRows) => {
   const rows = [];
 
@@ -25,10 +33,11 @@ const downloadCSV = (data, fileName = "errors.csv") => {
 
   const csvRows = [
     header.join(","),
-    ...data.map(
-      (row) =>
-        `${row.column},${row.rule},${row.count},"[${row.rows.join(", ")}]"`,
-    ),
+    ...data.map((row) => {
+      const ruleLabel = RULE_LABELS[row.rule] || row.rule;
+
+      return `${row.column},${ruleLabel},${row.count},"[${row.rows.join(", ")}]"`;
+    }),
   ];
 
   const blob = new Blob([csvRows.join("\n")], {
@@ -141,8 +150,8 @@ const ColumnDetailRow = ({
 
       {/* Blank Rows */}
       <td className="px-3 py-3">
-        <span className="text-base font-medium  whitespace-nowrap">
-          {stats.blank_rows ?? 0}
+        <span className="text-base font-medium whitespace-nowrap">
+          {stats.empty_count ?? 0}
         </span>
       </td>
 

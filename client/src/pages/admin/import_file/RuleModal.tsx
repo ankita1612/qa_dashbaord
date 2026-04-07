@@ -132,11 +132,7 @@ const RuleModal: React.FC<Props> = ({
                 <option
                   key={opt.value}
                   value={opt.value}
-                  disabled={
-                    (tempRule.type === "data_type" &&
-                      opt.value !== "data_type") ||
-                    appliedRuleTypes.includes(opt.value)
-                  }
+                  disabled={appliedRuleTypes.includes(opt.value)}
                 >
                   {" "}
                   {opt.label}{" "}
@@ -263,8 +259,8 @@ const RuleModal: React.FC<Props> = ({
                 <div className="mt-0">
                   <div className="grid grid-cols-2 gap-2">
                     {/* STRING TYPES */}
-                    {["string", "alphabetic", "boolean"].some((type) =>
-                      currentDataType.includes(type),
+                    {currentDataType.some((type) =>
+                      ["string", "alphabetic", "boolean"].includes(type),
                     ) && (
                       <>
                         <input
@@ -289,7 +285,9 @@ const RuleModal: React.FC<Props> = ({
                     )}
 
                     {/* NUMBER */}
-                    {["integer", "float"].includes(currentDataType) && (
+                    {currentDataType.some((type) =>
+                      ["integer", "float"].includes(type),
+                    ) && (
                       <>
                         <input
                           type="number"
@@ -313,7 +311,9 @@ const RuleModal: React.FC<Props> = ({
                     )}
 
                     {/* DATE */}
-                    {["integer", "float"].includes(currentDataType) && (
+                    {currentDataType.some((type) =>
+                      ["integer", "float"].includes(type),
+                    ) && (
                       <>
                         <input
                           type="date"
@@ -345,8 +345,8 @@ const RuleModal: React.FC<Props> = ({
                     <label className={label_style}>Fixed Value</label>
                     {/* STRING TYPES */}
                     <div className="p-0 m-0 ">
-                      {["string", "alphabetic", "boolean"].includes(
-                        currentDataType,
+                      {currentDataType.some((type) =>
+                        ["string", "alphabetic", "boolean"].includes(type),
                       ) && (
                         <input
                           type="number"
@@ -360,7 +360,9 @@ const RuleModal: React.FC<Props> = ({
                       )}
 
                       {/* NUMBER */}
-                      {["integer", "float"].includes(currentDataType) && (
+                      {currentDataType.some((type) =>
+                        ["integer", "float"].includes(type),
+                      ) && (
                         <input
                           type="number"
                           placeholder="Fixed Number"
@@ -373,7 +375,7 @@ const RuleModal: React.FC<Props> = ({
                       )}
 
                       {/* DATE */}
-                      {currentDataType === "date" && (
+                      {currentDataType.includes("date") && (
                         <input
                           type="date"
                           value={tempRule.fixed || ""}

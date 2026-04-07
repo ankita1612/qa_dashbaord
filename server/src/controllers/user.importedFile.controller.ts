@@ -181,9 +181,9 @@ class ImportFileController {
 
       finalColumns.forEach((col) => {
         Object.keys(column_wise_stats[col] || {}).forEach((key) => {
-          if (key !== "error_msg") {
-            metricsSet.add(key);
-          }
+          if (!["error_msg", "error_rows", "invalid_row_numbers","unique_values"].includes(key)) {
+  metricsSet.add(key);
+}
         });
       });
 

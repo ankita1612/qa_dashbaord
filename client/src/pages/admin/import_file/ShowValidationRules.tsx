@@ -427,7 +427,11 @@ const ShowValidationRules: React.FC<Props> = ({
           type: "dependency",
           dependency_mode: val.mode || "required",
           other_value_main_dependency: val.main_value || "",
-          sub_dependencies: val.sub_dependencies || [],
+          sub_dependencies: (val.sub_dependencies || []).map((s: any) => ({
+            headers: [...s.headers],
+            mode: s.mode,
+            value: s.value,
+          })),
           sub_headers: [],
           sub_mode: "required",
           sub_value: "",
@@ -506,12 +510,9 @@ const ShowValidationRules: React.FC<Props> = ({
           rules.push({
             type: "dependency",
             value: {
-              mode: "required",
-              main_value: null,
-              sub_dependencies: keys.map((k) => ({
-                headers: k.split(","), // convert "A,B,C" → ["A","B","C"]
-                mode: "required",
-              })),
+              mode: saved.dependency.mode || "required",
+              main_value: saved.dependency.main_value || null,
+              sub_dependencies: saved.dependency.sub_dependencies || [],
             },
           });
         }

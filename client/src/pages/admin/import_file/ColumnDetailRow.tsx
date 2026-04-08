@@ -218,7 +218,7 @@ const ColumnDetailRow = ({
               )}
             </div>
           ) : (
-            <span className="text-base text-gray-400">—</span>
+            <span className="text-base text-gray-400">-</span>
           );
         })()}
       </td>

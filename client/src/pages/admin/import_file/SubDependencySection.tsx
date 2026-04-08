@@ -38,50 +38,53 @@ const SubDependencySection: React.FC<Props> = ({
   );
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const handleAdd = useCallback(() => {
-    setTempRule((prev) => {
-      if (!prev.sub_headers || prev.sub_headers.length === 0) {
-        toast.error("Select at least one header");
-        return prev;
-      }
+    const prev = tempRule;
 
-      if (prev.sub_mode === "other" && !prev.sub_value) {
-        toast.error("Enter sub dependency value");
-        return prev;
-      }
+    // ✅ validations FIRST
+    if (!prev.sub_headers || prev.sub_headers.length === 0) {
+      toast.error("Select at least one header");
+      return;
+    }
 
-      const existing = prev.sub_dependencies || [];
+    if (prev.sub_mode === "other" && !prev.sub_value) {
+      toast.error("Enter sub dependency value");
+      return;
+    }
 
-      const usedHeaders = new Set(
-        existing
-          .filter((_, idx) => idx !== editingIndex)
-          .flatMap((s) => s.headers),
-      );
+    const existing = prev.sub_dependencies || [];
 
-      const duplicate = prev.sub_headers.some((h) => usedHeaders.has(h));
+    const usedHeaders = new Set(
+      existing
+        .filter((_, idx) => idx !== editingIndex)
+        .flatMap((s) => s.headers),
+    );
 
-      if (duplicate) {
-        toast.error("Header already used");
-        return prev;
-      }
+    const duplicate = prev.sub_headers.some((h) => usedHeaders.has(h));
 
-      const newItem = {
-        headers: [...prev.sub_headers],
-        mode: prev.sub_mode,
-        value: prev.sub_mode === "other" ? prev.sub_value : undefined,
-      };
+    if (duplicate) {
+      toast.error("Header already used");
+      return;
+    }
 
-      let updatedList = [...existing];
+    const newItem = {
+      headers: [...prev.sub_headers],
+      mode: prev.sub_mode,
+      value: prev.sub_mode === "other" ? prev.sub_value : undefined,
+    };
+
+    // ✅ update state
+    setTempRule((prevState) => {
+      const list = prevState.sub_dependencies || [];
+      let updatedList = [...list];
 
       if (editingIndex !== null) {
         updatedList[editingIndex] = newItem;
-        toast.success("Sub dependency updated");
       } else {
         updatedList.push(newItem);
-        toast.success("Sub dependency added");
       }
 
       return {
-        ...prev,
+        ...prevState,
         sub_dependencies: updatedList,
         sub_headers: [],
         sub_mode: "required",
@@ -89,8 +92,15 @@ const SubDependencySection: React.FC<Props> = ({
       };
     });
 
+    // ✅ toast AFTER logic (sync)
+    if (editingIndex !== null) {
+      toast.success("Sub dependency updated");
+    } else {
+      toast.success("Sub dependency added");
+    }
+
     setEditingIndex(null);
-  }, [editingIndex, setTempRule]);
+  }, [tempRule, editingIndex, setTempRule]);
   const headerOptions = availableHeaders.map((h: string) => ({
     value: h,
     label: h,

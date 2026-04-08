@@ -58,6 +58,27 @@ const ShowImportedData: React.FC = () => {
         }),
       );
       console.log(cleanedRules);
+      Object.keys(cleanedRules).forEach((key) => {
+        const rule = cleanedRules[key];
+
+        if (!rule.dependency) return;
+
+        const dep = rule.dependency;
+        const transformed: Record<string, any> = {};
+
+        // 🔹 main dependency
+        transformed[key] = dep.mode === "required" ? true : dep.main_value;
+
+        // 🔹 sub dependencies
+        (dep.sub_dependencies || []).forEach((sub: any) => {
+          const subKey = sub.headers.join(",");
+          transformed[subKey] =
+            sub.mode === "required" ? true : (sub.value ?? true);
+        });
+
+        // ✅ overwrite only dependency
+        cleanedRules[key].dependency = transformed;
+      });
       const payload = {
         columnConfig: JSON.stringify(cleanedRules),
         fileName: filePath,

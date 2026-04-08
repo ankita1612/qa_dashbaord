@@ -97,29 +97,20 @@ const ValidationResult = () => {
   const handleDownload = async () => {
     try {
       setLoading(true);
+
       const fileName = dbFileName.split("/").pop();
-      const res = await apiClient.get(
-        `admin/api/qa_file/download/${fileName}`, // 👈 your API
-        {
-          responseType: "blob", // 🔥 IMPORTANT
-        },
-      );
 
-      // Create file URL
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const res = await apiClient.get(`admin/api/qa_file/download/${fileName}`);
 
-      // Create temp link
+      const fileUrl = res.data.result_file; // ✅ this is already URL
+
       const link = document.createElement("a");
-      link.href = url;
-
-      // Extract file name
-      const cleanFileName = fileName?.split("/").pop() || "report.xlsx";
-
-      link.setAttribute("download", cleanFileName);
+      link.href = fileUrl;
+      link.download = fileName || "report.xlsx";
+      link.target = "_blank"; // optional
 
       document.body.appendChild(link);
       link.click();
-
       link.remove();
     } catch (error) {
       console.error("Download failed:", error);

@@ -281,7 +281,6 @@ const SubDependencySection: React.FC<Props> = ({
                 }}
                 className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
               >
-                ===
                 <FiTrash2 size={14} />
               </button>
             </div>

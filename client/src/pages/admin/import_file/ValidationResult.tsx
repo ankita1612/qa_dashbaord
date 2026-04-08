@@ -1,177 +1,15 @@
 import ColumnDetailRow from "./ColumnDetailRow";
-
-import { useState, useMemo, useCallback } from "react";
+import apiClient from "../../../services/apiClient";
+import { useState, useMemo, useEffect } from "react";
 import { FiCheckCircle } from "react-icons/fi";
-import { XCircle } from "lucide-react";
+
 import SummaryCard from "./SummaryCard";
 import { useNavigate } from "react-router-dom";
 import { FaUpload } from "react-icons/fa";
-import { FiFileText, FiDownload } from "react-icons/fi";
-import { CheckCircle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { FiDownload } from "react-icons/fi";
+import { CheckCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
-const formatErrorMsg = (count, label) => {
-  if (!count || count === 0) {
-    return "No validation errors found";
-  }
-
-  switch (label) {
-    case "Length Type":
-      return `${count} value${count > 1 ? "s" : ""} failed length validation`;
-
-    case "Redundant Value":
-      return `${count} duplicate/redundant value${count > 1 ? "s" : ""} found`;
-
-    case "Regex":
-      return `${count} value${count > 1 ? "s" : ""} did not match the required pattern`;
-
-    case "Data Type":
-      return `${count} value${count > 1 ? "s" : ""} have incorrect data type`;
-
-    case "fixed_header":
-      return `${count} value${count > 1 ? "s" : ""} did not match fixed value`;
-
-    case "Dependency":
-      return `${count} dependency condition${count > 1 ? "s" : ""} failed`;
-
-    case "cell_start_with":
-      return `${count} value${count > 1 ? "s" : ""} did not start with the required prefix`;
-
-    case "cell_end_with":
-      return `${count} value${count > 1 ? "s" : ""} did not end with the required suffix`;
-
-    case "blocked":
-      return `${count} value${count > 1 ? "s" : ""} contain restricted/blocked content`;
-
-    case "required":
-      return `${count} empty or missing value${count > 1 ? "s" : ""} found`;
-  }
-};
-const errorKeyMap = {
-  fixed_header: "fixed_header_error_count",
-  is_required: "datatype_error_count",
-  cell_start_with: "cell_start_with_error_count",
-  cell_end_with: "cell_end_with_error_count",
-  not_match_found: "blocked_word_error_count",
-};
-const buildRulesArray = (colRules, issueMap = {}) => {
-  const arr = [];
-
-  if (!colRules) return arr;
-
-  // ✅ Length
-  if (colRules.length_validation_type) {
-    let value = colRules.length_validation_type;
-    if (colRules.length_validation_type == "fixed") {
-      value = `${value.charAt(0).toUpperCase() + value.slice(1)} (${
-        colRules.min_length ?? "-"
-      })`;
-    } else {
-      value = `${value.charAt(0).toUpperCase() + value.slice(1)} (${
-        colRules.min_length ?? "-"
-      } To ${colRules.max_length ?? "-"})`;
-    }
-
-    arr.push({
-      label: "Length Type",
-      value,
-      errorMsg: formatErrorMsg(
-        issueMap.length_validation_error_count,
-        "Length Type",
-      ),
-    });
-  }
-
-  // ✅ Redundant
-  if (colRules.data_redundant_value !== undefined) {
-    let value = colRules.data_redundant_value;
-
-    value = `${value} (Threshold: ${colRules.data_redundant_threshold ?? "-"})`;
-
-    arr.push({
-      label: "Redundant Value",
-      value,
-      errorMsg: formatErrorMsg(issueMap.redundant_error_count, "Redundant"),
-    });
-  }
-
-  // ✅ Regex
-  if (colRules.cell_contains) {
-    let value = colRules.cell_contains
-      ? `Enabled (${colRules.cell_contains_value || "pattern"})`
-      : "Disabled";
-
-    arr.push({
-      label: "Regex",
-      value,
-      errorMsg: formatErrorMsg(issueMap.regex_pattern_error_count, "Regex"),
-    });
-  }
-  if (colRules.data_type) {
-    let value = colRules.data_type;
-
-    value =
-      colRules.data_type === "date"
-        ? `Date (${colRules.date_format || "format"})`
-        : colRules.data_type.charAt(0).toUpperCase() +
-          colRules.data_type.slice(1);
-
-    arr.push({
-      label: "Data Type",
-      value,
-      errorMsg: formatErrorMsg(issueMap.datatype_error_count, "Data Type"),
-    });
-  }
-  // ✅ Dependency
-
-  if (colRules.dependency && Object.keys(colRules.dependency).length > 0) {
-    const value = Object.entries(colRules.dependency)
-      .map(([k, v]) => (v === true ? `${k} (Required)` : `${k} (${v})`))
-      .join(" - ");
-
-    arr.push({ label: "Dependency", value });
-  }
-
-  // ✅ Remaining fields (generic)
-  Object.entries(colRules).forEach(([key, value]) => {
-    if (
-      [
-        "name",
-        "data_type",
-        "date_format",
-        "length_validation_type",
-        "min_length",
-        "max_length",
-        "data_redundant_value",
-        "data_redundant_threshold",
-        "cell_contains",
-        "cell_contains_value",
-        "dependency",
-      ].includes(key)
-    ) {
-      return;
-    }
-    const errorCount = issueMap[errorKeyMap[key]];
-
-    arr.push({
-      label: key || key,
-      value: formatValue(value),
-      errorMsg: formatErrorMsg(errorCount, key),
-    });
-  });
-
-  return arr;
-};
-const formatValue = (value) => {
-  if (Array.isArray(value)) return value.join(", ");
-  if (typeof value === "object")
-    return Object.entries(value)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(", ");
-  if (value === true) return "Yes";
-  if (value === false) return "No";
-  return String(value);
-};
 const ignoreColumns = [
   "total_records",
   "valid_records",
@@ -187,75 +25,7 @@ const getFilteredColumns = (columnStats: any) => {
     Object.entries(stats).some(([key, value]) => !ignoreColumns.includes(key)),
   );
 };
-type ColumnError = {
-  row: number;
-  error_type: string;
-  error_description: string;
-};
 
-type ColumnStats = {
-  total_records: number;
-  valid_records: number;
-  invalid_records: number;
-  error_msg?: ColumnError[];
-  [key: string]: any;
-};
-
-type ResponseData = {
-  data: {
-    total_rows: number;
-    valid_rows: number;
-    invalid_rows: number;
-    column_wise_stats: Record<string, ColumnStats>;
-  };
-  result_file: string;
-  errors_for_coloms: Record<string, string[]>;
-};
-const errorStyleMap: Record<string, string> = {
-  empty: "text-yellow-700 bg-yellow-50 border-yellow-200",
-  regex: "text-purple-700 bg-purple-50 border-purple-200",
-  datatype: "text-blue-700 bg-blue-50 border-blue-200",
-  length: "text-green-700 bg-green-50 border-green-200",
-  start: "text-orange-700 bg-orange-50 border-orange-200",
-  end: "text-amber-700 bg-amber-50 border-amber-200",
-  duplicate: "text-pink-700 bg-pink-50 border-pink-200",
-  redundant: "text-pink-700 bg-pink-50 border-pink-200",
-  header: "text-indigo-700 bg-indigo-50 border-indigo-200",
-  blocked: "text-rose-700 bg-rose-50 border-rose-200",
-  depend: "text-cyan-700 bg-cyan-50 border-cyan-200",
-};
-
-const getErrorStyle = (err: string) => {
-  const lower = err.toLowerCase();
-
-  const match = Object.keys(errorStyleMap).find((key) => lower.includes(key));
-
-  return match
-    ? errorStyleMap[match]
-    : "text-gray-700 bg-gray-50 border-gray-200";
-};
-const FIELD_LABELS = {
-  is_required: "Required",
-  data_type: "Data Type",
-
-  length_validation_type: "Length Type",
-  min_length: "Min Length",
-  max_length: "Max Length",
-
-  data_redundant_value: "Redundant Value",
-  data_redundant_threshold: "Redundant Threshold",
-
-  cell_contains: "Regex Enabled",
-  cell_contains_value: "Regex Pattern",
-
-  fixed_header: "Fixed Value",
-  cell_start_with: "Starts With",
-  cell_end_with: "Ends With",
-
-  not_match_found: "Blocked Values",
-
-  dependency: "Dependency",
-};
 const ValidationResult = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -263,10 +33,31 @@ const ValidationResult = () => {
   const responseData = location.state?.responseData;
   const requestData = location.state?.requestData;
   const fileName = location.state?.fileName;
-  // console.log(responseData);
+  const dbFileName = location.state?.dbFileName;
 
-  const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const fileName = dbFileName.split("/").pop();
+        const res = await apiClient.get(
+          `admin/api/qa_file/validation-response/${fileName}`,
+        );
+        console.log(res.data.data.column_wise_stats);
+        setColumn_wise_stats(res.data.data.column_wise_stats);
+      } catch (err) {
+        console.error(err);
+        // setError("Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+  }, []);
+
+  const [loading, setLoading] = useState(false);
+  const [column_wise_stats, setColumn_wise_stats] = useState<any>({});
   if (!responseData) {
     return (
       <div className="p-6 text-center text-gray-500">No data available</div>
@@ -276,9 +67,7 @@ const ValidationResult = () => {
     total_rows = 0,
     valid_rows = 0,
     invalid_rows = 0,
-    column_wise_stats = {},
   } = responseData?.data || {};
-  const { result_file, errors_for_coloms } = responseData;
 
   const filteredColumns = useMemo(
     () => getFilteredColumns(column_wise_stats),
@@ -304,8 +93,42 @@ const ValidationResult = () => {
 
     return set;
   }, [requestData]);
+
+  const handleDownload = async () => {
+    try {
+      setLoading(true);
+      const fileName = dbFileName.split("/").pop();
+      const res = await apiClient.get(
+        `admin/api/qa_file/download/${fileName}`, // 👈 your API
+        {
+          responseType: "blob", // 🔥 IMPORTANT
+        },
+      );
+
+      // Create file URL
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+
+      // Create temp link
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Extract file name
+      const cleanFileName = fileName?.split("/").pop() || "report.xlsx";
+
+      link.setAttribute("download", cleanFileName);
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="mx-auto ">
         <div className="mb-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -351,16 +174,14 @@ const ValidationResult = () => {
           </div>
         </div>
         <div className="flex justify-end mb-6">
-          <a
-            href={result_file}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={handleDownload}
             className="relative inline-flex items-center gap-3 px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 shadow-lg group bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:shadow-xl"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-sidebarSecondary to-sidebarSecondaryHover"></div>
             <FiDownload className="relative z-10 text-lg transition-transform group-hover:scale-110" />
             <span className="relative z-10">Download Full Report</span>
-          </a>
+          </button>
         </div>
         {/* 🔹 COLUMN LIST */}
         <div className="overflow-hidden bg-white border border-gray-100 shadow-lg rounded-2xl">
@@ -389,38 +210,41 @@ const ValidationResult = () => {
             <table className="min-w-[800px] w-full border-collapse">
               <thead className="border-b-2 bg-gradient-to-r from-slate-100 to-slate-50 border-slate-200">
                 <tr>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[5%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[5%] whitespace-nowrap">
                     ID
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[15%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[15%] whitespace-nowrap">
                     Headers
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[6%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[6%] whitespace-nowrap">
                     Total
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[8%] whitespace-nowrap">
                     QC Pass
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[8%] whitespace-nowrap">
                     QC Fail
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[6%]">
-                    Blank Rows
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[6%] whitespace-nowrap">
+                    Empty Rows
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[15%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[10%] whitespace-nowrap">
                     Reasons
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[8%] whitespace-nowrap">
                     Unique %
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[8%] whitespace-nowrap">
                     Status
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[8%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[8%] whitespace-nowrap">
                     QC Fail %
                   </th>
-                  <th className="px-3 py-3 text-left text-lg font-bold text-slate-600 uppercase tracking-wider w-[13%]">
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[13%]  whitespace-nowrap">
                     No. of Row ID
+                  </th>
+                  <th className="px-3 py-3 text-left text-base font-bold text-slate-600 uppercase tracking-wider w-[5%]  whitespace-nowrap">
+                    Action
                   </th>
                 </tr>
               </thead>
@@ -461,6 +285,29 @@ const ValidationResult = () => {
           </div>
         </div>
       </div>
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 pointer-events-auto">
+            {/* Animated ring with custom colors */}
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#3F4D67] border-r-[#424649] animate-spin"></div>
+              <div
+                className="absolute inset-0 rounded-full border-4 border-transparent border-b-[#3F4D67] border-l-[#424649] animate-spin animation-delay-150"
+                style={{ animationDuration: "0.8s" }}
+              ></div>
+              <div className="absolute inset-2 rounded-full bg-gradient-to-r from-[#3F4D67] to-[#424649] animate-pulse"></div>
+            </div>
+
+            {/* Pulsing text */}
+            <div className="relative">
+              <p className="text-sm font-semibold bg-gradient-to-r from-[#3F4D67] to-[#424649] bg-clip-text text-transparent animate-pulse">
+                Processing...
+              </p>
+              <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-[#3F4D67] to-[#424649] rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

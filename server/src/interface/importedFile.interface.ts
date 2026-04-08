@@ -49,9 +49,17 @@ export interface SummaryReportQuery {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+type DataType =
+  | "string"
+  | "alphabetic"
+  | "boolean"
+  | "date"
+  | "integer"
+  | "float";
 export interface ColumnRule {
   name: string;
-  data_type?: "string" | "integer" | "number" | "boolean" | "date";
+  data_type?: "string" | "integer" | "float" | "boolean" | "date";
+  data_types_new?: DataType[];
   is_required?: boolean;
   data_redundant_value?: string | null;
   data_redundant_threshold?: number;
@@ -72,6 +80,7 @@ export interface ColumnRule {
   dependency?: Record<string, any>;
   fixed_header_value?: string;
   cell_start_with_value?: string;
+  cell_end_with_value?: string;
   fixed_header_set?: Set<string>; //for faster speed validation of predefined values
   cell_start_with_normalized?: string[]; //for faster speed validation of start_with values
   cell_end_with_normalized?: string[]; //for faster speed validation of end_with values

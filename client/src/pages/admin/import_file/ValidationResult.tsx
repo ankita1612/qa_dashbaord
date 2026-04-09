@@ -41,7 +41,7 @@ const ValidationResult = () => {
         setLoading(true);
         const fileName = dbFileName.split("/").pop();
         const res = await apiClient.get(
-          `admin/api/qa_file/validation-response/${fileName}`,
+          `admin/api/validate/validation-response/${fileName}`,
         );
         console.log(res.data.data.column_wise_stats);
         setColumn_wise_stats(res.data.data.column_wise_stats);
@@ -100,7 +100,9 @@ const ValidationResult = () => {
 
       const fileName = dbFileName.split("/").pop();
 
-      const res = await apiClient.get(`admin/api/qa_file/download/${fileName}`);
+      const res = await apiClient.get(
+        `admin/api/validate/download/${fileName}`,
+      );
 
       const fileUrl = res.data.result_file; // ✅ this is already URL
 

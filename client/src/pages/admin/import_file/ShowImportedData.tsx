@@ -84,9 +84,13 @@ const ShowImportedData: React.FC = () => {
         fileName: filePath,
       };
       setLoading(true);
-      const response = await apiClient.post(`admin/api/qa_file`, payload, {
-        withCredentials: true,
-      });
+      const response = await apiClient.post(
+        `admin/api/validate/run-validation`,
+        payload,
+        {
+          withCredentials: true,
+        },
+      );
 
       toast.success("Validation completed successfully");
 

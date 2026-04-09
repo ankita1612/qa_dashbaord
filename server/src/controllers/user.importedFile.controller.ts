@@ -12,16 +12,14 @@ import { parser } from "stream-json";
 import { streamArray } from "stream-json/streamers/StreamArray";
 import csv from "csv-parser";
 import { convertXlsToXlsx } from "../utils/convertXlsToXlsx";
-import { ValidationSummary } from "../models/ValidationSummary";
-import { ColumnErrors } from "../models/ColumnErrors";
-import { ValidatationResponse } from "../models/ValidationResponse";
-import { ErrorLog } from "../models/ErrorLog";
+import { validationResponse } from "../models/validationResponse.model";
+import { errorLog } from "../models/errorLog";
 import {
   validateRow,
   getCellValue,
   prepareColumnRules,
 } from "../validations/user.importedFile.validations";
-import { FileRules } from "../models/fileRules.model";
+import { ValidationRule } from "../models/validationRule.model";
 
 /**
  * Add/Upload Imported File
@@ -41,7 +39,7 @@ class ImportFileController {
     return `${file_name}_${mm}${dd}${yyyy}${hh}${mi}${ss}.${extension}`;
   };
 
-  addImportedFile = async (
+  runValidation = async (
     req: Request,
     res: Response,
     next: NextFunction,
@@ -105,20 +103,20 @@ class ImportFileController {
         throw new Error("No column stats generated or File is empty");
       }
   
-      await ValidatationResponse.create({
-  fileName,
-  column_wise_stats,
-});
-// await ValidatationResponse.updateOne(
-//         { fileName },
-//         {
-//           $set: {
-//             fileName,
-//             column_wise_stats,
-//           },
-//         },
-//         { upsert: true },
-//       );
+//       await validationResponse.create({
+//   fileName,
+//   column_wise_stats,
+// });
+await validationResponse.updateOne(
+        { fileName },
+        {
+          $set: {
+            fileName,
+            column_wise_stats,
+          },
+        },
+        { upsert: true },
+      );
       //delete result.column_wise_stats;
       res.status(200).json({
         success: true,
@@ -336,7 +334,7 @@ class ImportFileController {
         });
       }
 
-      const data = await ValidatationResponse.findOne({ fileName }).lean(); // 🔥 faster
+      const data = await validationResponse.findOne({ fileName }).lean(); // 🔥 faster
 
       if (!data) {
         return res.status(404).json({
@@ -369,14 +367,14 @@ class ImportFileController {
         });
       }
 
-      const validattionResponse = await ValidatationResponse.findOne({
+      const validattionResponse = await validationResponse.findOne({
         fileName,
       }).lean(); // 🔥 faster
      
 
       const newFileName= fileName.toLowerCase().endsWith(".xls")? fileName.replace(/\.xls$/i, ".xlsx"): fileName;
       
-      const errorLog = await ErrorLog.findOne({
+      const errorLog = await errorLog.findOne({
         fileName:newFileName,
       });
       

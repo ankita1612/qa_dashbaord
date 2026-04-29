@@ -102,12 +102,12 @@ class ImportFileController {
       if (!columns.length) {
         throw new Error("No column stats generated or File is empty");
       }
-  
-//       await validationResponse.create({
-//   fileName,
-//   column_wise_stats,
-// });
-await validationResponse.updateOne(
+
+      //       await validationResponse.create({
+      //   fileName,
+      //   column_wise_stats,
+      // });
+      await validationResponse.updateOne(
         { fileName },
         {
           $set: {
@@ -367,18 +367,20 @@ await validationResponse.updateOne(
         });
       }
 
-      const validattionResponse = await validationResponse.findOne({
-        fileName,
-      }).lean(); // 🔥 faster
-     
+      const validattionResponse = await validationResponse
+        .findOne({
+          fileName,
+        })
+        .lean(); // 🔥 faster
 
-      const newFileName= fileName.toLowerCase().endsWith(".xls")? fileName.replace(/\.xls$/i, ".xlsx"): fileName;
-      
-      const errorLog = await errorLog.findOne({
-        fileName:newFileName,
+      const newFileName = fileName.toLowerCase().endsWith(".xls")
+        ? fileName.replace(/\.xls$/i, ".xlsx")
+        : fileName;
+
+      const errorLogData = await errorLog.findOne({
+        fileName: newFileName,
       });
-      
-     
+
       const errorFilePath = this.generateFileName("validation_result", "xlsx");
       const outputPath = path.join("validation_result", errorFilePath);
       await fs.promises.mkdir("validation_result", { recursive: true });
@@ -498,7 +500,7 @@ await validationResponse.updateOne(
       errorHeaderRow.font = { bold: true };
       errorHeaderRow.commit();
       // Insert rows (efficient)
-      for (const err of errorLog?.errors || []) {
+      for (const err of errorLogData?.errors || []) {
         const row = errorSheet.addRow([
           this.cleanExcelString(err.rowNumber),
           this.cleanExcelString(err.columnName),
